@@ -1,68 +1,172 @@
-import { useState, useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
+type MonitorRow = {
+  operador: string;
+  maquina: string;
+  pedido: string;
+  plano: string;
+  duracao: string;
+  conclusao: string;
+  rowType: string;
+  isDelayed: boolean;
+};
+
+type MonitorSnapshot = {
+  activeItems: MonitorRow[];
+  historyItems: MonitorRow[];
+  historyTotal: number;
+  count: number;
+  statusText: string;
+  statusColor: string;
+  selectedDate: string;
+  refreshIntervalMs: number;
+  locksFilePath: string;
+  xmlFilePath: string;
+};
+
 function App() {
-  const [status, setStatus] = useState("Parado");
-  const [isRunning, setIsRunning] = useState(false);
+  const [dateInput, setDateInput] = useState("");
+  const [snapshot, setSnapshot] = useState<MonitorSnapshot | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const loadSnapshot = async (requestedDate?: string) => {
+    setIsLoading(true);
+    setErrorMessage("");
+
+    try {
+      const data = await invoke<MonitorSnapshot>("get_monitor_snapshot", {
+        viewDate: requestedDate && requestedDate.trim() ? requestedDate : undefined,
+      });
+      setSnapshot(data);
+      setDateInput(data.selectedDate);
+    } catch (error) {
+      setErrorMessage(String(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Atualizar status periodicamente
-    const interval = setInterval(async () => {
-      try {
-        const currentStatus = await invoke("get_cut_status");
-        setStatus(currentStatus);
-        setIsRunning(currentStatus === "Cortando");
-      } catch (error) {
-        console.error("Erro ao obter status:", error);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
+    loadSnapshot();
   }, []);
 
-  async function startCut() {
-    try {
-      await invoke("start_cut");
-      setStatus("Cortando");
-      setIsRunning(true);
-    } catch (error) {
-      console.error("Erro ao iniciar corte:", error);
+  useEffect(() => {
+    if (!snapshot) {
+      return;
     }
-  }
 
-  async function stopCut() {
-    try {
-      await invoke("stop_cut");
-      setStatus("Parado");
-      setIsRunning(false);
-    } catch (error) {
-      console.error("Erro ao parar corte:", error);
-    }
-  }
+    const timerId = window.setInterval(() => {
+      loadSnapshot(dateInput || snapshot.selectedDate);
+    }, snapshot.refreshIntervalMs);
+
+    return () => window.clearInterval(timerId);
+  }, [snapshot?.refreshIntervalMs, snapshot?.selectedDate, dateInput]);
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    await loadSnapshot(dateInput);
+  };
+
+  const totalVisibleRows = (snapshot?.activeItems.length ?? 0) + (snapshot?.historyItems.length ?? 0);
 
   return (
-    <main className="container">
-      <h1>Controle de Corte</h1>
+    <main className="monitor-shell">
+      <header className="monitor-header">
+        <div className="title-block">
+          <p className="eyebrow">Replica do monitor Python</p>
+          <h1>Monitor de Operacoes</h1>
+        </div>
 
-      <div className="status">
-        <h2>Status: {status}</h2>
-      </div>
+        <form className="search-bar" onSubmit={handleSubmit}>
+          <label>
+            Data
+            <input
+              value={dateInput}
+              onChange={(event) => setDateInput(event.target.value)}
+              placeholder="dd/mm/aaaa"
+            />
+          </label>
+          <button type="submit" disabled={isLoading}>
+            Buscar
+          </button>
+        </form>
 
-      <div className="controls">
-        <button onClick={startCut} disabled={isRunning}>
-          Iniciar Corte
-        </button>
-        <button onClick={stopCut} disabled={!isRunning}>
-          Parar Corte
-        </button>
-      </div>
+        <div className="header-status">
+          <strong>{snapshot?.count ?? 0} ativos</strong>
+          <span style={{ color: snapshot?.statusColor }}>{snapshot?.statusText ?? "carregando..."}</span>
+        </div>
+      </header>
 
-      <div className="parameters">
-        <label>
-          Parâmetro de Corte:
-          <input type="number" placeholder="Ex: 10" />
-        </label>
-      </div>
+      <section className="summary-grid">
+        <article className="summary-card">
+          <span>Em operacao</span>
+          <strong>{snapshot?.count ?? 0}</strong>
+        </article>
+        <article className="summary-card">
+          <span>Finalizados</span>
+          <strong>{snapshot?.historyTotal ?? 0}</strong>
+        </article>
+        <article className="summary-card wide">
+          <span>Arquivo XML monitorado</span>
+          <strong>{snapshot?.xmlFilePath ?? "-"}</strong>
+        </article>
+        <article className="summary-card wide">
+          <span>Arquivo de locks</span>
+          <strong>{snapshot?.locksFilePath ?? "-"}</strong>
+        </article>
+      </section>
+
+      <section className="table-card">
+        <div className="table-header">
+          <div>
+            <h2>Operacoes em tempo real</h2>
+            <p>{totalVisibleRows} linhas exibidas</p>
+          </div>
+          {isLoading ? <span className="pill">Atualizando...</span> : <span className="pill">Atualizado</span>}
+        </div>
+
+        {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
+
+        <div className="table-wrap">
+          <table className="monitor-table">
+            <thead>
+              <tr>
+                <th>OPERADOR</th>
+                <th>MAQUINA</th>
+                <th>PEDIDO</th>
+                <th>PLANO (SAIDA CNC)</th>
+                <th>DURACAO</th>
+                <th>CONCLUSAO</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot?.activeItems.map((row, index) => (
+                <tr key={`active-${row.maquina}-${row.plano}-${index}`} className={row.isDelayed ? "delayed" : "active"}>
+                  <td>{row.operador}</td>
+                  <td>{row.maquina}</td>
+                  <td>{row.pedido}</td>
+                  <td>{row.plano}</td>
+                  <td>{row.duracao}</td>
+                  <td>{row.conclusao}</td>
+                </tr>
+              ))}
+              {snapshot?.historyItems.map((row, index) => (
+                <tr key={`history-${row.maquina}-${row.plano}-${row.conclusao}-${index}`} className="history">
+                  <td>{row.operador}</td>
+                  <td>{row.maquina}</td>
+                  <td>{row.pedido}</td>
+                  <td>{row.plano}</td>
+                  <td>{row.duracao}</td>
+                  <td>{row.conclusao}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
   );
 }
