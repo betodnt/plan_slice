@@ -1,0 +1,25 @@
+use chrono::Utc;
+
+use crate::{
+    db::models::MonitorSnapshot,
+    error::AppError,
+    services::local_store_service::LocalStoreService,
+    state::AppState,
+};
+
+pub struct MonitorService;
+
+impl MonitorService {
+    pub async fn get_snapshot(_state: &AppState) -> Result<MonitorSnapshot, AppError> {
+        let mut data = LocalStoreService::load()?;
+        LocalStoreService::cleanup_expired_locks(&mut data);
+        LocalStoreService::save(&data)?;
+
+        Ok(MonitorSnapshot {
+            active_operations: LocalStoreService::active_operations(&data),
+            active_locks: LocalStoreService::active_locks(&data),
+            machines: LocalStoreService::machines(&data),
+            generated_at: Utc::now(),
+        })
+    }
+}

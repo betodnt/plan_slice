@@ -1,9 +1,8 @@
 [package]
 name = "tauri-app"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
 edition = "2021"
+description = "Backend Tauri/Rust para o sistema de plano de corte"
 
 [lib]
 name = "tauri_app_lib"
@@ -13,9 +12,19 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+dotenvy = "0.15"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-chrono = { version = "0.4", default-features = true, features = ["clock"] }
-quick-xml = "0.38"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "mysql", "chrono", "uuid"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+quick-xml = { version = "0.39.2", features = ["serialize"] }
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
+uuid = { version = "1", features = ["serde", "v4"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

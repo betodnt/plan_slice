@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Controle de Corte",
+  "productName": "Plano de Corte",
   "version": "0.1.0",
-  "identifier": "com.pcp-05.controle-corte",
+  "identifier": "com.pcp-05.plano-corte",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "Controle de Corte",
-        "width": 800,
-        "height": 600
+        "title": "Plano de Corte",
+        "width": 1280,
+        "height": 800,
+        "resizable": true
       }
     ],
     "security": {

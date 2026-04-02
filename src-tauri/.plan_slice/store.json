@@ -1,0 +1,14 @@
+{
+  "next_machine_id": 2,
+  "next_operator_id": 1,
+  "machines": [
+    {
+      "id": 1,
+      "name": "Bodor1 (12K)",
+      "is_active": true
+    }
+  ],
+  "operators": [],
+  "operations": [],
+  "locks": []
+}
