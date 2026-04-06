@@ -18,6 +18,7 @@ impl MonitorService {
         Ok(MonitorSnapshot {
             active_operations: LocalStoreService::active_operations(&data),
             active_locks: LocalStoreService::active_locks(&data),
+            recent_operations: LocalStoreService::recent_operations(&data, 200),
             machines: LocalStoreService::machines(&data),
             generated_at: Utc::now(),
         })

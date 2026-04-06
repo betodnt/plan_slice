@@ -47,9 +47,14 @@ function getErrorMessage(error: unknown): string {
 function formatDuration(startedAt: string): string {
   const start = new Date(startedAt).getTime();
   const elapsed = Math.floor((Date.now() - start) / 1000);
-  const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-  const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-  const s = String(elapsed % 60).padStart(2, '0');
+  return formatElapsedSeconds(elapsed);
+}
+
+function formatElapsedSeconds(totalSeconds: number): string {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const h = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+  const s = String(safeSeconds % 60).padStart(2, '0');
   return `${h}:${m}:${s}`;
 }
 
@@ -481,12 +486,15 @@ export default function App() {
 
   const isFormDisabled = loading || activeOperationId !== '';
   const historyRows = useMemo(() => {
-    if (!monitor?.active_operations) return [];
-    return monitor.active_operations
+    if (!monitor?.recent_operations || !form.operador.trim()) return [];
+    const selectedOperator = form.operador.trim().toLocaleLowerCase('pt-BR');
+
+    return monitor.recent_operations
       .slice()
+      .filter((row) => row.operator_name.trim().toLocaleLowerCase('pt-BR') === selectedOperator)
       .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
       .slice(0, 100);
-  }, [monitor?.active_operations]);
+  }, [form.operador, monitor?.recent_operations]);
 
   const operatorOptions = bootstrapData?.operators ?? [];
   const storageOk = !!status?.storage_ready;
@@ -511,13 +519,27 @@ export default function App() {
                 </tr>
               </thead>
               <tbody>
-                {historyRows.map((row) => (
-                  <tr key={row.operation_id}>
-                    <td>{row.pedido}</td>
-                    <td>{row.saida}</td>
-                    <td>{formatDuration(row.started_at)}</td>
+                {historyRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={3}>
+                      {form.operador.trim()
+                        ? 'Nenhum historico encontrado para este operador.'
+                        : 'Selecione um operador para ver o historico.'}
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  historyRows.map((row) => (
+                    <tr key={row.operation_id}>
+                      <td>{row.pedido}</td>
+                      <td>{row.saida}</td>
+                      <td>
+                        {row.elapsed_seconds !== null
+                          ? formatElapsedSeconds(row.elapsed_seconds)
+                          : formatDuration(row.started_at)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -640,7 +662,9 @@ export default function App() {
 
             <div className="bottom-area">
               <div className={`network-status ${storageOk ? 'ok' : 'warn'}`}>
-                {storageOk ? 'Pastas e gravacao local OK' : 'Preparando armazenamento local...'}
+                {storageOk
+                  ? 'Pastas e gravacao compartilhada OK'
+                  : 'Preparando armazenamento compartilhado...'}
               </div>
 
               <div className="timer-display">{timerString}</div>

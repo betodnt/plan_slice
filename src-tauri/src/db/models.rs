@@ -65,6 +65,7 @@ pub struct ActiveLockSummary {
 pub struct MonitorSnapshot {
     pub active_operations: Vec<OperationSummary>,
     pub active_locks: Vec<ActiveLockSummary>,
+    pub recent_operations: Vec<OperationSummary>,
     pub machines: Vec<MachineSummary>,
     pub generated_at: DateTime<Utc>,
 }

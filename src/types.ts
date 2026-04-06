@@ -54,6 +54,7 @@ export type ActiveLockSummary = {
 export type MonitorSnapshot = {
   active_operations: OperationSummary[];
   active_locks: ActiveLockSummary[];
+  recent_operations: OperationSummary[];
   machines: MachineSummary[];
   generated_at: string;
 };

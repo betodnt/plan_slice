@@ -3,6 +3,7 @@ use std::{
     fs::OpenOptions,
     io::ErrorKind,
     path::PathBuf,
+    process,
     thread,
     time::Duration as StdDuration,
 };
@@ -73,6 +74,13 @@ struct StoreLockGuard {
     path: PathBuf,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct StoreLockMetadata {
+    machine_name: String,
+    pid: u32,
+    created_at: chrono::DateTime<Utc>,
+}
+
 impl Drop for StoreLockGuard {
     fn drop(&mut self) {
         let _ = fs::remove_file(&self.path);
@@ -97,8 +105,19 @@ impl LocalStoreService {
                 .create_new(true)
                 .open(&lock_path)
             {
-                Ok(_) => return Ok(StoreLockGuard { path: lock_path }),
+                Ok(file) => {
+                    let metadata = StoreLockMetadata {
+                        machine_name: ConfigService::machine_name(),
+                        pid: process::id(),
+                        created_at: Utc::now(),
+                    };
+                    serde_json::to_writer_pretty(file, &metadata)
+                        .map_err(|error| AppError::Internal(format!("falha ao gravar lock: {error}")))?;
+
+                    return Ok(StoreLockGuard { path: lock_path });
+                }
                 Err(error) if error.kind() == ErrorKind::AlreadyExists => {
+                    Self::clear_stale_lock_file(&lock_path)?;
                     thread::sleep(StdDuration::from_millis(100));
                 }
                 Err(error) => return Err(AppError::Io(error.to_string())),
@@ -108,6 +127,28 @@ impl LocalStoreService {
         Err(AppError::Io(
             "timeout ao aguardar liberacao do store local".to_string(),
         ))
+    }
+
+    fn clear_stale_lock_file(lock_path: &PathBuf) -> Result<(), AppError> {
+        let metadata = match fs::metadata(lock_path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(AppError::Io(error.to_string())),
+        };
+
+        let modified = metadata
+            .modified()
+            .map_err(|error| AppError::Io(error.to_string()))?;
+
+        let elapsed = modified
+            .elapsed()
+            .map_err(|error| AppError::Io(error.to_string()))?;
+
+        if elapsed.as_secs() < ConfigService::store_lock_stale_seconds() as u64 {
+            return Ok(());
+        }
+
+        fs::remove_file(lock_path).map_err(|error| AppError::Io(error.to_string()))
     }
 
     fn load_unlocked() -> Result<StoreData, AppError> {
@@ -375,6 +416,22 @@ impl LocalStoreService {
             .collect();
 
         operations.sort_by(|a, b| b.started_at.cmp(&a.started_at));
+        operations
+    }
+
+    pub(crate) fn recent_operations(data: &StoreData, limit: usize) -> Vec<OperationSummary> {
+        let mut operations: Vec<_> = data.operations.iter().map(Self::map_operation).collect();
+
+        operations.sort_by(|a, b| {
+            let left = a.finished_at.unwrap_or(a.started_at);
+            let right = b.finished_at.unwrap_or(b.started_at);
+            right.cmp(&left)
+        });
+
+        if operations.len() > limit {
+            operations.truncate(limit);
+        }
+
         operations
     }
 

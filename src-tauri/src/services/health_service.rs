@@ -31,7 +31,7 @@ impl HealthService {
         Ok(StorageCheckResult {
             ok: true,
             message: format!(
-                "armazenamento local OK ({})",
+                "armazenamento compartilhado OK ({})",
                 store_path.to_string_lossy()
             ),
             checked_at: Utc::now(),
