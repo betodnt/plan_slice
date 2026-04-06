@@ -41,6 +41,8 @@ export type OperationSummary = {
   started_at: string;
   finished_at: string | null;
   elapsed_seconds: number | null;
+  completed_full: boolean | null;
+  incomplete_reason: string | null;
 };
 
 export type ActiveLockSummary = {
@@ -85,6 +87,12 @@ export type FinishOperationResult = {
   status: string;
   elapsed_seconds: number;
   message: string;
+};
+
+export type FinishOperationInput = {
+  operation_id: string;
+  completed_full: boolean;
+  incomplete_reason?: string | null;
 };
 
 export type LockHeartbeatResult = {

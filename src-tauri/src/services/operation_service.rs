@@ -27,6 +27,24 @@ fn resolve_source_file(saida: &str) -> Result<PathBuf, AppError> {
     })
 }
 
+fn resolve_finish_source_file(saida: &str) -> Result<PathBuf, AppError> {
+    let local_path = ConfigService::saidas_cnc_path()?;
+    let server_path = ConfigService::server_path()?;
+    let cortadas_path = ConfigService::saidas_cortadas_path()?;
+    let candidates = vec![
+        PathBuf::from(local_path),
+        PathBuf::from(server_path),
+        PathBuf::from(cortadas_path),
+    ];
+
+    FileService::find_existing_file(saida, &candidates).ok_or_else(|| {
+        AppError::Io(format!(
+            "arquivo da operacao nao encontrado nas pastas configuradas: {}",
+            saida
+        ))
+    })
+}
+
 impl OperationService {
     pub async fn bootstrap_storage(_state: &AppState) -> Result<BootstrapResult, AppError> {
         let config = ConfigService::load()?;
@@ -88,23 +106,39 @@ impl OperationService {
         if input.operation_id.trim().is_empty() {
             return Err(AppError::Config("operation_id e obrigatorio".to_string()));
         }
+        if !input.completed_full
+            && input
+                .incomplete_reason
+                .as_deref()
+                .map(|value| value.trim().is_empty())
+                .unwrap_or(true)
+        {
+            return Err(AppError::Config(
+                "informe o motivo quando o plano nao for cortado completo".to_string(),
+            ));
+        }
 
         let owner_id = format!("desktop:rollback:{}", input.operation_id.trim());
         let (operation_id, elapsed_seconds, saida) = LocalStoreService::with_data_mut(|data| {
-            LocalStoreService::finish_operation(data, input.operation_id.trim())
+            LocalStoreService::finish_operation(
+                data,
+                input.operation_id.trim(),
+                input.completed_full,
+                input.incomplete_reason.as_deref().map(str::trim),
+            )
         })?;
 
-        let local_path = ConfigService::saidas_cnc_path()?;
         let cortadas_path = ConfigService::saidas_cortadas_path()?;
-
-        let src_file = Path::new(&local_path).join(&saida);
         let dst_file = Path::new(&cortadas_path).join(&saida);
+        let src_file = resolve_finish_source_file(&saida)?;
 
-        if let Err(error) = FileService::move_file(&src_file, &dst_file) {
-            let _ = LocalStoreService::with_data_mut(|data| {
-                LocalStoreService::rollback_finish_operation(data, &operation_id, &owner_id)
-            });
-            return Err(error);
+        if src_file != dst_file {
+            if let Err(error) = FileService::move_file(&src_file, &dst_file) {
+                let _ = LocalStoreService::with_data_mut(|data| {
+                    LocalStoreService::rollback_finish_operation(data, &operation_id, &owner_id)
+                });
+                return Err(error);
+            }
         }
 
         Ok(FinishOperationResult {

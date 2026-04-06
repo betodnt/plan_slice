@@ -33,6 +33,8 @@ struct OperationRecord {
     started_at: chrono::DateTime<Utc>,
     finished_at: Option<chrono::DateTime<Utc>>,
     elapsed_seconds: Option<i32>,
+    completed_full: Option<bool>,
+    incomplete_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -295,6 +297,8 @@ impl LocalStoreService {
             started_at: now,
             finished_at: None,
             elapsed_seconds: None,
+            completed_full: None,
+            incomplete_reason: None,
         });
 
         data.locks.push(LockRecord {
@@ -327,6 +331,8 @@ impl LocalStoreService {
     pub(crate) fn finish_operation(
         data: &mut StoreData,
         operation_id: &str,
+        completed_full: bool,
+        incomplete_reason: Option<&str>,
     ) -> Result<(String, i32, String), AppError> {
         Self::cleanup_expired_locks(data);
 
@@ -349,6 +355,8 @@ impl LocalStoreService {
         operation.finished_at = Some(finished_at);
         operation.elapsed_seconds = Some(elapsed_seconds);
         operation.status = "finished".to_string();
+        operation.completed_full = Some(completed_full);
+        operation.incomplete_reason = incomplete_reason.map(ToOwned::to_owned);
 
         data.locks.retain(|lock| lock.operation_id != operation_id);
 
@@ -375,6 +383,8 @@ impl LocalStoreService {
         operation.finished_at = None;
         operation.elapsed_seconds = None;
         operation.status = "started".to_string();
+        operation.completed_full = None;
+        operation.incomplete_reason = None;
 
         if data.locks.iter().any(|lock| lock.operation_id == operation_id) {
             return Ok(());
@@ -476,6 +486,8 @@ impl LocalStoreService {
             started_at: item.started_at,
             finished_at: item.finished_at,
             elapsed_seconds: item.elapsed_seconds,
+            completed_full: item.completed_full,
+            incomplete_reason: item.incomplete_reason.clone(),
         }
     }
 }

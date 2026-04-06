@@ -213,6 +213,8 @@ impl OperationRepository {
                         finished_at: finished_at
                             .map(|value| DateTime::<Utc>::from_naive_utc_and_offset(value, Utc)),
                         elapsed_seconds,
+                        completed_full: None,
+                        incomplete_reason: None,
                     }
                 },
             )

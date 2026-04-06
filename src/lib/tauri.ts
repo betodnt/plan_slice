@@ -3,6 +3,7 @@ import type {
   BackendStatus,
   BootstrapData,
   BootstrapResult,
+  FinishOperationInput,
   FinishOperationResult,
   LockHeartbeatResult,
   MonitorLoginInput,
@@ -17,12 +18,13 @@ import type {
   OpenPdfInput
 } from "../types";
 
-type FinishOperationInput = {
+type LockHeartbeatInput = {
   operation_id: string;
 };
 
-type LockHeartbeatInput = {
-  operation_id: string;
+export type SaveConfigInput = {
+  machine_name: string;
+  storage_path: string;
 };
 
 export const tauriClient = {
@@ -64,5 +66,8 @@ export const tauriClient = {
   },
   validateMonitorLogin(input: MonitorLoginInput) {
     return invoke<MonitorLoginResult>("validate_monitor_login", { input });
+  },
+  saveConfig(input: SaveConfigInput) {
+    return invoke<void>("save_config", { input });
   }
 };

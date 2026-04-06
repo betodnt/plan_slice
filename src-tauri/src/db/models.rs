@@ -9,6 +9,12 @@ pub struct RuntimeConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SaveConfigInput {
+    pub machine_name: String,
+    pub storage_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackendStatus {
     pub app_name: String,
     pub app_env: String,
@@ -50,6 +56,8 @@ pub struct OperationSummary {
     pub started_at: DateTime<Utc>,
     pub finished_at: Option<DateTime<Utc>>,
     pub elapsed_seconds: Option<i32>,
+    pub completed_full: Option<bool>,
+    pub incomplete_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -99,6 +107,8 @@ pub struct StartOperationResult {
 #[derive(Debug, Clone, Deserialize)]
 pub struct FinishOperationInput {
     pub operation_id: String,
+    pub completed_full: bool,
+    pub incomplete_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -22,8 +22,8 @@ pub async fn search_cnc_files(input: SearchCncInput) -> Result<SearchCncResult, 
 
 #[tauri::command]
 pub async fn open_pdf(input: OpenPdfInput) -> Result<bool, ErrorResponse> {
-    let server_path_str = ConfigService::server_path().map_err(AppError::from)?;
-    let base_path = Path::new(&server_path_str);
+    let pdf_planos_path_str = ConfigService::pdf_planos_path().map_err(AppError::from)?;
+    let base_path = Path::new(&pdf_planos_path_str);
 
     let pdf_filename = input.cnc_filename.replace(".cnc", ".pdf");
 
