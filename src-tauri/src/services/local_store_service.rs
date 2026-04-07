@@ -213,11 +213,6 @@ impl LocalStoreService {
         Self::load_unlocked()
     }
 
-    pub(crate) fn save(data: &StoreData) -> Result<(), AppError> {
-        let _guard = Self::acquire_store_lock()?;
-        Self::save_unlocked(data)
-    }
-
     pub fn bootstrap(machine_name: &str) -> Result<(), AppError> {
         Self::with_data_mut(|data| {
             Self::ensure_machine(data, machine_name);

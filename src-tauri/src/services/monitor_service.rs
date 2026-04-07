@@ -13,7 +13,6 @@ impl MonitorService {
     pub async fn get_snapshot(_state: &AppState) -> Result<MonitorSnapshot, AppError> {
         let mut data = LocalStoreService::load()?;
         LocalStoreService::cleanup_expired_locks(&mut data);
-        LocalStoreService::save(&data)?;
 
         Ok(MonitorSnapshot {
             active_operations: LocalStoreService::active_operations(&data),

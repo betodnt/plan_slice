@@ -131,3 +131,18 @@ export type MonitorLoginResult = {
   message: string;
 };
 
+export type MonitorLoginForm = {
+  username: string;
+  password: string;
+};
+
+export type FinishDialogState = {
+  completedFull: boolean;
+  incompleteReason: string;
+};
+
+export type ConfigPaths = {
+  shared_store: string;
+  machine_name: string;
+};
+
