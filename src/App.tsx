@@ -31,16 +31,16 @@ const initialForm: StartOperationInput = {
 };
 
 function detectMonitorView(): boolean {
-  if (
-    new URLSearchParams(window.location.search).get('view') === 'monitor' ||
-    window.location.hash.startsWith('#monitor')
-  ) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('view') === 'monitor' || window.location.hash.includes('monitor')) {
     return true;
   }
 
   try {
-    return getCurrentWebviewWindow().label === 'monitor';
-  } catch {
+    const label = getCurrentWebviewWindow().label;
+    return label === 'monitor';
+  } catch (err) {
+    console.error('Falha ao detectar label da janela:', err);
     return false;
   }
 }
