@@ -13,6 +13,13 @@ struct FileConfig {
     app_env: Option<String>,
     machine_name: Option<String>,
     storage_path: Option<String>,
+    production_base_path: Option<String>,
+    server_path: Option<String>,
+    saidas_cnc_path: Option<String>,
+    saidas_cortadas_path: Option<String>,
+    pdf_planos_path: Option<String>,
+    lock_timeout_seconds: Option<i64>,
+    store_lock_stale_seconds: Option<i64>,
 }
 
 impl ConfigService {
@@ -134,10 +141,55 @@ impl ConfigService {
             .unwrap_or_else(Self::machine_name);
         let storage_path = Self::storage_file_path()?;
 
+        let production_base_path = file_config
+            .as_ref()
+            .and_then(|config| config.production_base_path.clone())
+            .unwrap_or_else(|| {
+                env::var("PRODUCTION_BASE_PATH")
+                    .unwrap_or_else(|_| "V:\\8. CONTROLE DE PRODU\u{00C7}\u{00C3}O".to_string())
+            });
+
+        let server_path = file_config
+            .as_ref()
+            .and_then(|config| config.server_path.clone())
+            .unwrap_or_else(|| Self::server_path().unwrap_or_default());
+
+        let saidas_cnc_path = file_config
+            .as_ref()
+            .and_then(|config| config.saidas_cnc_path.clone())
+            .unwrap_or_else(|| Self::saidas_cnc_path().unwrap_or_default());
+
+        let saidas_cortadas_path = file_config
+            .as_ref()
+            .and_then(|config| config.saidas_cortadas_path.clone())
+            .unwrap_or_else(|| Self::saidas_cortadas_path().unwrap_or_default());
+
+        let pdf_planos_path = file_config
+            .as_ref()
+            .and_then(|config| config.pdf_planos_path.clone())
+            .unwrap_or_else(|| Self::pdf_planos_path().unwrap_or_default());
+
+        let lock_timeout_seconds = file_config
+            .as_ref()
+            .and_then(|config| config.lock_timeout_seconds)
+            .unwrap_or_else(Self::lock_timeout_seconds);
+
+        let store_lock_stale_seconds = file_config
+            .as_ref()
+            .and_then(|config| config.store_lock_stale_seconds)
+            .unwrap_or_else(Self::store_lock_stale_seconds);
+
         Ok(RuntimeConfig {
             app_env,
             machine_name,
             storage_path: storage_path.to_string_lossy().to_string(),
+            production_base_path,
+            server_path,
+            saidas_cnc_path,
+            saidas_cortadas_path,
+            pdf_planos_path,
+            lock_timeout_seconds,
+            store_lock_stale_seconds,
         })
     }
 
@@ -199,9 +251,16 @@ impl ConfigService {
         }
 
         let content = serde_json::to_string_pretty(&FileConfig {
-            app_env: Some(env::var("APP_ENV").unwrap_or_else(|_| "production".to_string())),
+            app_env: Some(input.app_env),
             machine_name: Some(machine_name.to_string()),
             storage_path: Some(storage_path.to_string()),
+            production_base_path: Some(input.production_base_path),
+            server_path: Some(input.server_path),
+            saidas_cnc_path: Some(input.saidas_cnc_path),
+            saidas_cortadas_path: Some(input.saidas_cortadas_path),
+            pdf_planos_path: Some(input.pdf_planos_path),
+            lock_timeout_seconds: Some(input.lock_timeout_seconds),
+            store_lock_stale_seconds: Some(input.store_lock_stale_seconds),
         })
         .map_err(|error| AppError::Internal(format!("falha ao serializar config.json: {error}")))?;
 

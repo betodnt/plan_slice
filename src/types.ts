@@ -2,6 +2,13 @@ export type RuntimeConfig = {
   app_env: string;
   machine_name: string;
   storage_path: string;
+  production_base_path: string;
+  server_path: string;
+  saidas_cnc_path: string;
+  saidas_cortadas_path: string;
+  pdf_planos_path: string;
+  lock_timeout_seconds: number;
+  store_lock_stale_seconds: number;
 };
 
 export type BackendStatus = {
@@ -144,5 +151,13 @@ export type FinishDialogState = {
 export type ConfigPaths = {
   shared_store: string;
   machine_name: string;
+  app_env: string;
+  production_base_path: string;
+  server_path: string;
+  saidas_cnc_path: string;
+  saidas_cortadas_path: string;
+  pdf_planos_path: string;
+  lock_timeout_seconds: number;
+  store_lock_stale_seconds: number;
 };
 
