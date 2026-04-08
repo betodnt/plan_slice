@@ -39,18 +39,10 @@ function getStatusClasses(status: string) {
 
 export function MonitorHistoryTable({ rows }: MonitorHistoryTableProps) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-      <div className="mb-4 flex items-end justify-between gap-4 border-b border-zinc-800 pb-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-            Historico geral
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-zinc-100">
-            Status, motivo e tempo final
-          </h2>
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-end">
         <div className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-          {rows.length} registros
+          {rows.length} registros exibidos
         </div>
       </div>
 
@@ -126,6 +118,6 @@ export function MonitorHistoryTable({ rows }: MonitorHistoryTableProps) {
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }
