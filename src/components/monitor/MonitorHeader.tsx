@@ -23,9 +23,18 @@ export function MonitorHeader({
   return (
     <section className="grid grid-cols-[minmax(320px,1.3fr)_220px_220px_minmax(280px,auto)] gap-4">
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
-          Monitor em tempo real
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
+            Monitor em tempo real
+          </p>
+          <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+            </span>
+            <span className="text-[10px] font-bold tracking-wider text-emerald-500">LIVE</span>
+          </div>
+        </div>
         <h1 className="mt-3 text-4xl font-bold tracking-tight text-zinc-100">
           Apps rodando agora
         </h1>

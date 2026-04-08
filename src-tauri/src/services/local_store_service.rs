@@ -114,7 +114,7 @@ impl LocalStoreService {
                         created_at: Utc::now(),
                     };
                     serde_json::to_writer_pretty(file, &metadata)
-                        .map_err(|error| AppError::Internal(format!("falha ao gravar lock: {error}")))?;
+                        .map_err(|error| AppError::Internal(format!("Falha ao gravar lock: {error}")))?;
 
                     return Ok(StoreLockGuard { path: lock_path });
                 }
@@ -127,7 +127,7 @@ impl LocalStoreService {
         }
 
         Err(AppError::Io(
-            "timeout ao aguardar liberacao do store local".to_string(),
+            "Tempo esgotado ao aguardar liberação do armazenamento local.".to_string(),
         ))
     }
 
@@ -158,14 +158,14 @@ impl LocalStoreService {
         let content = fs::read_to_string(&store_path)?;
 
         serde_json::from_str(&content)
-            .map_err(|error| AppError::Internal(format!("falha ao ler store local: {error}")))
+            .map_err(|error| AppError::Internal(format!("Falha ao ler o armazenamento: {error}")))
     }
 
     fn save_unlocked(data: &StoreData) -> Result<(), AppError> {
         let store_path = Self::ensure_store()?;
         let temp_path = store_path.with_extension("json.tmp");
         let content = serde_json::to_string_pretty(data)
-            .map_err(|error| AppError::Internal(format!("falha ao salvar store local: {error}")))?;
+            .map_err(|error| AppError::Internal(format!("Falha ao salvar o armazenamento: {error}")))?;
 
         fs::write(&temp_path, content)?;
 
@@ -197,7 +197,7 @@ impl LocalStoreService {
 
         if !store_path.exists() {
             let initial = serde_json::to_string_pretty(&StoreData::default())
-                .map_err(|error| AppError::Internal(error.to_string()))?;
+                .map_err(|error| AppError::Internal(format!("Falha ao inicializar o armazenamento: {error}")))?;
             fs::write(&store_path, initial)?;
         }
 
@@ -273,7 +273,7 @@ impl LocalStoreService {
 
         if data.locks.iter().any(|lock| lock.saida == saida) {
             return Err(AppError::Config(
-                "esta saida ja esta em uso por outro operador".to_string(),
+                "Esta saída já está em uso por outro operador.".to_string(),
             ));
         }
 
@@ -317,7 +317,7 @@ impl LocalStoreService {
         data.locks.retain(|lock| lock.operation_id != operation_id);
 
         if data.operations.len() == before {
-            return Err(AppError::Config("operacao nao encontrada".to_string()));
+            return Err(AppError::Config("Operação não encontrada para cancelamento.".to_string()));
         }
 
         Ok(())
@@ -335,7 +335,7 @@ impl LocalStoreService {
             .operations
             .iter_mut()
             .find(|item| item.operation_id == operation_id)
-            .ok_or_else(|| AppError::Config("operacao nao encontrada".to_string()))?;
+            .ok_or_else(|| AppError::Config("Operação não encontrada.".to_string()))?;
 
         if operation.status == "finished" {
             return Ok((
@@ -373,7 +373,7 @@ impl LocalStoreService {
             .operations
             .iter_mut()
             .find(|item| item.operation_id == operation_id)
-            .ok_or_else(|| AppError::Config("operacao nao encontrada".to_string()))?;
+            .ok_or_else(|| AppError::Config("Operação não encontrada.".to_string()))?;
 
         operation.finished_at = None;
         operation.elapsed_seconds = None;
