@@ -9,6 +9,7 @@ export function useMonitorSnapshot() {
   const [runtime, setRuntime] = useState<RuntimeConfig | null>(null);
   const [error, setError] = useState('');
   const [now, setNow] = useState(Date.now());
+  const [dateFilter, setDateFilter] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -64,15 +65,23 @@ export function useMonitorSnapshot() {
   const historyRows = useMemo(() => {
     if (!monitor?.recent_operations) return [];
 
-    return monitor.recent_operations
-      .slice()
+    let filtered = monitor.recent_operations.slice();
+
+    if (dateFilter) {
+      filtered = filtered.filter((row) => {
+        const rowDate = new Date(row.started_at).toISOString().split('T')[0];
+        return rowDate === dateFilter;
+      });
+    }
+
+    return filtered
       .sort((a, b) => {
         const left = new Date(a.finished_at ?? a.started_at).getTime();
         const right = new Date(b.finished_at ?? b.started_at).getTime();
         return right - left;
       })
-      .slice(0, 150);
-  }, [monitor?.recent_operations]);
+      .slice(0, 500);
+  }, [monitor?.recent_operations, dateFilter]);
 
   return {
     error,
@@ -80,6 +89,13 @@ export function useMonitorSnapshot() {
     monitor,
     activeRows,
     historyRows,
+    dateFilter,
+    setDateFilter,
+    refresh: () => {
+      setError('');
+      setMonitor(null);
+      // O intervalo cuidará do resto ou podemos forçar uma chamada se necessário
+    },
     activeCount: activeRows.length,
     historyCount: historyRows.length,
     currentTime: new Intl.DateTimeFormat('pt-BR', {

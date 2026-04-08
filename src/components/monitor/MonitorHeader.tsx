@@ -3,6 +3,7 @@ type MonitorHeaderProps = {
   historyCount: number;
   currentTime: string;
   lastUpdate: string;
+  onRefresh: () => void;
 };
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
@@ -19,6 +20,7 @@ export function MonitorHeader({
   historyCount,
   currentTime,
   lastUpdate,
+  onRefresh,
 }: MonitorHeaderProps) {
   return (
     <section className="grid grid-cols-[minmax(320px,1.3fr)_220px_220px_minmax(280px,auto)] gap-4">
@@ -47,13 +49,21 @@ export function MonitorHeader({
       <SummaryCard label="Historico carregado" value={historyCount} />
 
       <div className="flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-right shadow-xl">
-        <div>
+        <div className="flex flex-col items-end gap-1">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Agora</p>
-          <strong className="mt-3 block text-lg font-semibold leading-snug text-zinc-100">
+          <strong className="block text-lg font-semibold leading-snug text-zinc-100">
             {currentTime}
           </strong>
         </div>
-        <p className="mt-6 text-sm text-zinc-400">Atualizado em {lastUpdate}</p>
+        <div className="mt-4 flex items-center justify-end gap-4">
+          <p className="text-sm text-zinc-400">Atualizado em {lastUpdate}</p>
+          <button
+            onClick={onRefresh}
+            className="flex h-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-xs font-bold tracking-wider text-zinc-300 transition hover:border-zinc-700 hover:bg-zinc-800 active:scale-95"
+          >
+            ATUALIZAR
+          </button>
+        </div>
       </div>
     </section>
   );
