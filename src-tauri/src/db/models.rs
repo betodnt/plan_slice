@@ -6,12 +6,27 @@ pub struct RuntimeConfig {
     pub app_env: String,
     pub machine_name: String,
     pub storage_path: String,
+    pub production_base_path: String,
+    pub server_path: String,
+    pub saidas_cnc_path: String,
+    pub saidas_cortadas_path: String,
+    pub pdf_planos_path: String,
+    pub lock_timeout_seconds: i64,
+    pub store_lock_stale_seconds: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SaveConfigInput {
     pub machine_name: String,
     pub storage_path: String,
+    pub app_env: String,
+    pub production_base_path: String,
+    pub server_path: String,
+    pub saidas_cnc_path: String,
+    pub saidas_cortadas_path: String,
+    pub pdf_planos_path: String,
+    pub lock_timeout_seconds: i64,
+    pub store_lock_stale_seconds: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

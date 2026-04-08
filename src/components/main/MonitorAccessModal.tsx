@@ -169,10 +169,44 @@ export function MonitorAccessModal({
               </button>
             </div>
 
-            <div className="mt-6 space-y-5">
+            <div className="mt-6 h-[460px] space-y-5 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    APP_ENV
+                  </span>
+                  <select
+                    className={inputClass}
+                    value={configPaths.app_env}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        app_env: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="production">production</option>
+                    <option value="development">development</option>
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Nome da maquina
+                  </span>
+                  <input
+                    className={inputClass}
+                    value={configPaths.machine_name}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        machine_name: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+
               <label className="block space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                  Armazenamento compartilhado (rede)
+                  Armazenamento compartilhado (.plan_slice)
                 </span>
                 <input
                   className={inputClass}
@@ -182,39 +216,135 @@ export function MonitorAccessModal({
                       shared_store: e.target.value,
                     })
                   }
-                  placeholder="Ex: \\servidor\pasta\.plan_slice ou ...\store.json"
+                  placeholder="Ex: V:\8. CONTROLE DE PRODUÇÃO\3. DADOS\.plan_slice"
                 />
               </label>
+
               <label className="block space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                  Nome da maquina
+                  Caminho Base (Production)
                 </span>
                 <input
                   className={inputClass}
-                  value={configPaths.machine_name}
+                  value={configPaths.production_base_path}
                   onChange={(e) =>
                     onConfigPathsChange({
-                      machine_name: e.target.value,
+                      production_base_path: e.target.value,
                     })
                   }
                 />
               </label>
 
-              <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
-                <button type="button" className={secondaryButtonClass} onClick={onClose}>
-                  FECHAR
-                </button>
-                <button
-                  type="button"
-                  className={primaryButtonClass}
-                  onClick={() => {
-                    void onSaveConfig();
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? 'SALVANDO...' : 'SALVAR'}
-                </button>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Caminho Servidor (Saídas)
+                  </span>
+                  <input
+                    className={inputClass}
+                    value={configPaths.server_path}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        server_path: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Caminho Saídas CNC
+                  </span>
+                  <input
+                    className={inputClass}
+                    value={configPaths.saidas_cnc_path}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        saidas_cnc_path: e.target.value,
+                      })
+                    }
+                  />
+                </label>
               </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Caminho Saídas Cortadas
+                  </span>
+                  <input
+                    className={inputClass}
+                    value={configPaths.saidas_cortadas_path}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        saidas_cortadas_path: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Caminho PDF Planos
+                  </span>
+                  <input
+                    className={inputClass}
+                    value={configPaths.pdf_planos_path}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        pdf_planos_path: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 border-t border-zinc-800 pt-4">
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Lock Timeout (segundos)
+                  </span>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={configPaths.lock_timeout_seconds}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        lock_timeout_seconds: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Lock Stale (segundos)
+                  </span>
+                  <input
+                    type="number"
+                    className={inputClass}
+                    value={configPaths.store_lock_stale_seconds}
+                    onChange={(e) =>
+                      onConfigPathsChange({
+                        store_lock_stale_seconds: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 pt-5 border-t border-zinc-800 sm:flex-row sm:justify-end">
+              <button type="button" className={secondaryButtonClass} onClick={onClose}>
+                FECHAR
+              </button>
+              <button
+                type="button"
+                className={primaryButtonClass}
+                onClick={() => {
+                  void onSaveConfig();
+                }}
+                disabled={loading}
+              >
+                {loading ? 'SALVANDO...' : 'SALVAR'}
+              </button>
             </div>
           </>
         )}

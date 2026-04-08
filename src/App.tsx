@@ -71,6 +71,14 @@ function MainApp() {
   const [configPaths, setConfigPaths] = useState<ConfigPaths>({
     shared_store: '',
     machine_name: '',
+    app_env: '',
+    production_base_path: '',
+    server_path: '',
+    saidas_cnc_path: '',
+    saidas_cortadas_path: '',
+    pdf_planos_path: '',
+    lock_timeout_seconds: 14400,
+    store_lock_stale_seconds: 30,
   });
 
   const monitorUsernameRef = useRef<HTMLInputElement | null>(null);
@@ -201,6 +209,14 @@ function MainApp() {
       setConfigPaths({
         shared_store: runtime.storage_path || '',
         machine_name: runtime.machine_name || '',
+        app_env: runtime.app_env || 'production',
+        production_base_path: runtime.production_base_path || '',
+        server_path: runtime.server_path || '',
+        saidas_cnc_path: runtime.saidas_cnc_path || '',
+        saidas_cortadas_path: runtime.saidas_cortadas_path || '',
+        pdf_planos_path: runtime.pdf_planos_path || '',
+        lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
+        store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
       });
     }
 
@@ -403,6 +419,14 @@ function MainApp() {
       await tauriClient.saveConfig({
         machine_name: configPaths.machine_name,
         storage_path: configPaths.shared_store,
+        app_env: configPaths.app_env,
+        production_base_path: configPaths.production_base_path,
+        server_path: configPaths.server_path,
+        saidas_cnc_path: configPaths.saidas_cnc_path,
+        saidas_cortadas_path: configPaths.saidas_cortadas_path,
+        pdf_planos_path: configPaths.pdf_planos_path,
+        lock_timeout_seconds: configPaths.lock_timeout_seconds,
+        store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
       });
       showFeedback('Configuracoes salvas com sucesso.');
       await loadInitialState();
