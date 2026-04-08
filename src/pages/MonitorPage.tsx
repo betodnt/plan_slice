@@ -52,8 +52,8 @@ export default function MonitorPage() {
           <StateCard message="Carregando historico do monitor..." tone="loading" />
         ) : null}
 
-        {error && !monitor ? (
-          <StateCard message={`Falha ao carregar o monitor: ${error}`} tone="error" />
+        {error ? (
+          <StateCard message={`Falha na atualização do monitor: ${error}`} tone="error" />
         ) : null}
 
         <MonitorHeader

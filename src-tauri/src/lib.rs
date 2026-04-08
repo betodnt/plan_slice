@@ -29,8 +29,12 @@ fn open_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "monitor", WebviewUrl::App("index.html".into()))
-        .title("Monitor de Operacoes")
+    WebviewWindowBuilder::new(
+        &app,
+        "monitor",
+        WebviewUrl::App("index.html?view=monitor".into()),
+    )
+    .title("Monitor de Operacoes")
         .inner_size(1280.0, 860.0)
         .center()
         .maximized(true)
