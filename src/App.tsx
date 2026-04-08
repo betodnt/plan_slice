@@ -152,7 +152,7 @@ function MainApp() {
 
     const monitorInterval = window.setInterval(() => {
       void handleRefreshMonitor();
-    }, 10000);
+    }, 3000);
 
     return () => {
       stopTimer();

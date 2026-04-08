@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { tauriClient } from '../lib/tauri';
 import type { MonitorSnapshot } from '../types';
 
@@ -24,15 +24,15 @@ export function useActiveOperation({
   const operationTimer = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
-  const stopTimer = () => {
+  const stopTimer = useCallback(() => {
     if (operationTimer.current !== null) {
       window.clearInterval(operationTimer.current);
       operationTimer.current = null;
     }
     startTimeRef.current = null;
-  };
+  }, []);
 
-  const startTimer = (startedAt?: string) => {
+  const startTimer = useCallback((startedAt?: string) => {
     stopTimer();
     startTimeRef.current = startedAt ? new Date(startedAt).getTime() : Date.now();
 
@@ -46,16 +46,16 @@ export function useActiveOperation({
       const s = String(totalSeconds % 60).padStart(2, '0');
       setTimerString(`${h}:${m}:${s}`);
     }, 1000);
-  };
+  }, [stopTimer]);
 
-  const stopHeartbeat = () => {
+  const stopHeartbeat = useCallback(() => {
     if (heartbeatTimer.current !== null) {
       window.clearInterval(heartbeatTimer.current);
       heartbeatTimer.current = null;
     }
-  };
+  }, []);
 
-  const sendHeartbeat = async (operationId: string) => {
+  const sendHeartbeat = useCallback(async (operationId: string) => {
     try {
       const result = await tauriClient.touchOperationLock({
         operation_id: operationId,
@@ -64,7 +64,7 @@ export function useActiveOperation({
     } catch (error) {
       console.warn('Heartbeat failed', error);
     }
-  };
+  }, [onFeedback]);
 
   // Sync with monitor snapshot
   useEffect(() => {
