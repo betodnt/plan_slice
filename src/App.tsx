@@ -376,15 +376,6 @@ function MainApp() {
     ]
   );
 
-  const handleOpenMonitorWindow = useCallback(async () => {
-    try {
-      await tauriClient.openMonitorWindow();
-      showFeedback('Monitor aberto em uma nova janela.');
-    } catch (error) {
-      showFeedback(getErrorMessage(error));
-    }
-  }, [showFeedback]);
-
   const handleConfirmMonitorLogin = useCallback(
     async (event?: FormEvent) => {
       if (event) event.preventDefault();
@@ -508,7 +499,6 @@ function MainApp() {
         onConfirmMonitorLogin={handleConfirmMonitorLogin}
         configPaths={configPaths}
         onConfigPathsChange={handleConfigPathsChange}
-        onOpenMonitorWindow={handleOpenMonitorWindow}
         onSaveConfig={handleSaveConfig}
         loading={loading}
       />

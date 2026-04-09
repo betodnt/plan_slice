@@ -1,5 +1,4 @@
 import type { FormEvent, RefObject } from 'react';
-import { MonitorGlyph } from './Icons';
 import type { ConfigPaths, MonitorLoginForm } from '../../types';
 
 type MonitorAccessModalProps = {
@@ -14,7 +13,6 @@ type MonitorAccessModalProps = {
   onConfirmMonitorLogin: (event?: FormEvent) => void | Promise<void>;
   configPaths: ConfigPaths;
   onConfigPathsChange: (patch: Partial<ConfigPaths>) => void;
-  onOpenMonitorWindow: () => void | Promise<void>;
   onSaveConfig: () => void | Promise<void>;
   loading: boolean;
 };
@@ -28,9 +26,6 @@ const secondaryButtonClass =
 const primaryButtonClass =
   'inline-flex min-w-28 items-center justify-center rounded-lg border border-emerald-500 bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors duration-150 hover:border-emerald-400 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50';
 
-const iconButtonClass =
-  'inline-flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 text-zinc-100 transition-colors duration-150 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900';
-
 export function MonitorAccessModal({
   open,
   onClose,
@@ -43,7 +38,6 @@ export function MonitorAccessModal({
   onConfirmMonitorLogin,
   configPaths,
   onConfigPathsChange,
-  onOpenMonitorWindow,
   onSaveConfig,
   loading,
 }: MonitorAccessModalProps) {
@@ -150,23 +144,9 @@ export function MonitorAccessModal({
                   Caminhos do Sistema
                 </h3>
                 <p className="max-w-xl text-sm text-zinc-400">
-                  Ajuste a maquina e o armazenamento compartilhado e abra o monitor em uma janela
-                  dedicada.
+                  Ajuste a maquina e o armazenamento compartilhado.
                 </p>
               </div>
-              <button
-                type="button"
-                className={iconButtonClass}
-                title="Abrir monitor"
-                aria-label="Abrir monitor"
-                onClick={() => {
-                  void onOpenMonitorWindow();
-                }}
-              >
-                <span className="h-5 w-5">
-                  <MonitorGlyph />
-                </span>
-              </button>
             </div>
 
             <div className="mt-6 h-[460px] space-y-5 overflow-y-auto pr-2 custom-scrollbar">
