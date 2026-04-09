@@ -4,6 +4,14 @@ version = "0.1.0"
 edition = "2021"
 description = "Backend Tauri/Rust para o sistema de plano de corte"
 
+[[bin]]
+name = "plano-corte"
+path = "src/bin/plano_corte.rs"
+
+[[bin]]
+name = "plano-monitor"
+path = "src/bin/plano_monitor.rs"
+
 [lib]
 name = "tauri_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]

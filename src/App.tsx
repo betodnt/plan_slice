@@ -31,16 +31,19 @@ const initialForm: StartOperationInput = {
 };
 
 function detectMonitorView(): boolean {
+  // Em ambiente de desenvolvimento web/teste, o tauri-apps/api pode não estar disponível
+  // ou falhar ao invocar comandos nativos.
   const params = new URLSearchParams(window.location.search);
   if (params.get('view') === 'monitor' || window.location.hash.includes('monitor')) {
     return true;
   }
 
   try {
-    const label = getCurrentWebviewWindow().label;
-    return label === 'monitor';
+    // Tenta obter a janela atual. Se falhar (ex: ambiente web puro), tratamos o erro.
+    const win = getCurrentWebviewWindow();
+    return win.label === 'monitor';
   } catch (err) {
-    console.error('Falha ao detectar label da janela:', err);
+    // Silencioso em produção, útil em desenvolvimento
     return false;
   }
 }

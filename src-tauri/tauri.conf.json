@@ -10,14 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Plano de Corte",
-        "width": 1280,
-        "height": 800,
-        "resizable": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": null
     }

@@ -53,12 +53,19 @@ fn open_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    run_with_setup(|_| Ok(()))
+}
+
+pub fn run_with_setup<F>(setup: F)
+where
+    F: FnOnce(&mut tauri::App) -> Result<(), Box<dyn std::error::Error>> + Send + 'static,
+{
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
-        .setup(|_app| {
+        .setup(|app| {
             dotenvy::dotenv().ok();
-            Ok(())
+            setup(app)
         })
         .invoke_handler(tauri::generate_handler![
             commands::system::validate_system_paths,
