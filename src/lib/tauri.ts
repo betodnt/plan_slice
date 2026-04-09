@@ -69,9 +69,6 @@ export const tauriClient = {
   openPdf(input: OpenPdfInput) {
     return invoke<boolean>("open_pdf", { input });
   },
-  openMonitorWindow() {
-    return invoke<void>("open_monitor_window");
-  },
   validateMonitorLogin(input: MonitorLoginInput) {
     return invoke<MonitorLoginResult>("validate_monitor_login", { input });
   },
