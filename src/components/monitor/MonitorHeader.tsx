@@ -23,8 +23,8 @@ export function MonitorHeader({
   onRefresh,
 }: MonitorHeaderProps) {
   return (
-    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_240px_240px_1fr]">
-      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-xl backdrop-blur-sm">
+    <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-xl backdrop-blur-sm md:col-span-2 xl:col-span-1">
         <div className="flex items-center gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
             Monitor em tempo real
@@ -48,7 +48,7 @@ export function MonitorHeader({
       <SummaryCard label="Operacoes ativas" value={activeCount} />
       <SummaryCard label="Historico carregado" value={historyCount} />
 
-      <div className="flex flex-col justify-between rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 text-right shadow-xl backdrop-blur-sm">
+      <div className="flex flex-col justify-between rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 text-right shadow-xl backdrop-blur-sm md:col-span-2 xl:col-span-1">
         <div className="flex flex-col items-end gap-1">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Agora</p>
           <strong className="block font-digital text-2xl font-bold leading-snug text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">

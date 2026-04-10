@@ -450,7 +450,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100 lg:p-10">
-      <main className="mx-auto grid max-w-[1600px] gap-8 xl:grid-cols-2">
+      <main className="mx-auto grid max-w-[1600px] gap-8 lg:grid-cols-2">
         <HistoryPanel historyRows={historyRows} operatorName={form.operador} />
         <ControlPanel
           form={form}
