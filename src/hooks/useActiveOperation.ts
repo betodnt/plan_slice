@@ -74,8 +74,7 @@ export function useActiveOperation({
 
     const currentOperation = monitor.active_operations.find((row) => {
       const sameMachine = row.machine_name.trim() === machineName.trim();
-      const sameOperator =
-        !operatorName.trim() || row.operator_name.trim() === operatorName.trim();
+      const sameOperator = row.operator_name.trim() === operatorName.trim();
 
       return sameMachine && sameOperator;
     });

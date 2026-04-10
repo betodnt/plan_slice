@@ -46,9 +46,9 @@ export function ControlPanel({
   onOpenFinishDialog,
 }: ControlPanelProps) {
   return (
-    <section className="flex min-h-0 flex-col rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
+    <section className="flex min-h-0 flex-col rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-sm">
       <form className="flex min-h-full flex-col" onSubmit={onSubmit}>
-        <div className="mb-8 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+        <div className="mb-10 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6">
           <div className="grid grid-cols-2 gap-4">
             <label className="block">
               <span className={labelClass}>Operador</span>
@@ -181,7 +181,7 @@ export function ControlPanel({
               : 'Preparando armazenamento compartilhado...'}
           </div>
 
-          <div className="justify-self-end text-right text-6xl font-bold tracking-[0.08em] text-amber-300">
+          <div className="justify-self-end font-digital text-right text-6xl font-bold tracking-widest text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
             {timerString}
           </div>
 

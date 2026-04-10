@@ -196,7 +196,7 @@ export function MonitorAccessModal({
                       shared_store: e.target.value,
                     })
                   }
-                  placeholder="Ex: V:\8. CONTROLE DE PRODUÇÃO\3. DADOS\.plan_slice"
+                  placeholder={'Ex: V:\\8. CONTROLE DE PRODUÇÃO\\3. DADOS\\.plan_slice'}
                 />
               </label>
 

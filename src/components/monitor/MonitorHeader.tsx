@@ -8,7 +8,7 @@ type MonitorHeaderProps = {
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
+    <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 shadow-xl backdrop-blur-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">{label}</p>
       <strong className="mt-4 block text-4xl font-bold text-zinc-100">{value}</strong>
     </div>
@@ -23,8 +23,8 @@ export function MonitorHeader({
   onRefresh,
 }: MonitorHeaderProps) {
   return (
-    <section className="grid grid-cols-[minmax(320px,1.3fr)_220px_220px_minmax(280px,auto)] gap-4">
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
+    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_240px_240px_1fr]">
+      <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-xl backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
             Monitor em tempo real
@@ -48,10 +48,10 @@ export function MonitorHeader({
       <SummaryCard label="Operacoes ativas" value={activeCount} />
       <SummaryCard label="Historico carregado" value={historyCount} />
 
-      <div className="flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-5 text-right shadow-xl">
+      <div className="flex flex-col justify-between rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 text-right shadow-xl backdrop-blur-sm">
         <div className="flex flex-col items-end gap-1">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Agora</p>
-          <strong className="block text-lg font-semibold leading-snug text-zinc-100">
+          <strong className="block font-digital text-2xl font-bold leading-snug text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">
             {currentTime}
           </strong>
         </div>
