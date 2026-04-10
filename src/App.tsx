@@ -275,6 +275,8 @@ function MainApp() {
       }
     } catch (error) {
       showFeedback(getErrorMessage(error));
+      setAvailableSaidas([]);
+      setForm((prev) => ({ ...prev, saida: '' }));
     } finally {
       setLoading(false);
     }
@@ -447,8 +449,8 @@ function MainApp() {
   const storageOk = !!status?.storage_ready;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100">
-      <main className="grid min-h-[calc(100vh-3rem)] grid-cols-[minmax(340px,0.82fr)_minmax(680px,1.28fr)] gap-6">
+    <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100 lg:p-10">
+      <main className="mx-auto grid max-w-[1600px] gap-8 xl:grid-cols-2">
         <HistoryPanel historyRows={historyRows} operatorName={form.operador} />
         <ControlPanel
           form={form}

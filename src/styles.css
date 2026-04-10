@@ -2,6 +2,7 @@
 
 @theme {
   --font-sans: "Cascadia Code", "Segoe UI Variable Text", "IBM Plex Sans", sans-serif;
+  --font-digital: "Orbitron", sans-serif;
 }
 
 @layer base {

@@ -101,6 +101,9 @@ impl LocalStoreService {
             fs::create_dir_all(parent)?;
         }
 
+        // Tenta limpar um lock possivelmente estagnado antes de entrar no loop
+        Self::clear_stale_lock_file(&lock_path)?;
+
         for _ in 0..50 {
             match OpenOptions::new()
                 .write(true)
@@ -119,6 +122,7 @@ impl LocalStoreService {
                     return Ok(StoreLockGuard { path: lock_path });
                 }
                 Err(error) if error.kind() == ErrorKind::AlreadyExists => {
+                    // Verifica se o lock se tornou estagnado durante a espera
                     Self::clear_stale_lock_file(&lock_path)?;
                     thread::sleep(StdDuration::from_millis(100));
                 }
