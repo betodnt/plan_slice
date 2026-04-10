@@ -8,8 +8,8 @@ type ActiveOperationsTableProps = {
 
 export function ActiveOperationsTable({ rows, error }: ActiveOperationsTableProps) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-      <div className="mb-4 flex items-end justify-between gap-4 border-b border-zinc-800 pb-4">
+    <section className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-xl backdrop-blur-sm">
+      <div className="mb-6 flex items-end justify-between gap-4 border-b border-zinc-800/50 pb-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Lista viva

@@ -2,7 +2,15 @@
 
 @theme {
   --font-sans: "Cascadia Code", "Segoe UI Variable Text", "IBM Plex Sans", sans-serif;
-  --font-digital: "Orbitron", sans-serif;
+  --font-digital: "Orbitron Variable", "Orbitron", sans-serif;
+}
+
+@font-face {
+  font-family: "Orbitron Variable";
+  src: url("/Orbitron.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
 }
 
 @layer base {

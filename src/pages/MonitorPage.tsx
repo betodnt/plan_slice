@@ -5,8 +5,8 @@ import { useMonitorSnapshot } from '../hooks/useMonitorSnapshot';
 
 function InfoCard({ title, content }: { title: string; content: string }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-      <div className="mb-4 border-b border-zinc-800 pb-4">
+    <section className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 shadow-xl backdrop-blur-sm">
+      <div className="mb-4 border-b border-zinc-800/50 pb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
           Diagnostico
         </p>
@@ -49,8 +49,8 @@ export default function MonitorPage() {
   } = useMonitorSnapshot();
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100">
-      <div className="space-y-5">
+    <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100 lg:p-10">
+      <div className="mx-auto max-w-[1600px] space-y-8">
         {!monitor && !error ? (
           <StateCard message="Carregando historico do monitor..." tone="loading" />
         ) : null}
@@ -71,8 +71,8 @@ export default function MonitorPage() {
 
         <ActiveOperationsTable rows={activeRows} error={error} />
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 shadow-xl">
-          <div className="mb-6 flex flex-col gap-4 border-b border-zinc-800 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-xl backdrop-blur-sm">
+          <div className="mb-6 flex flex-col gap-4 border-b border-zinc-800/50 pb-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                 Filtros de consulta
