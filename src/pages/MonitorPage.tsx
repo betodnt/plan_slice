@@ -2,6 +2,7 @@ import { ActiveOperationsTable } from '../components/monitor/ActiveOperationsTab
 import { MonitorHeader } from '../components/monitor/MonitorHeader';
 import { MonitorHistoryTable } from '../components/monitor/MonitorHistoryTable';
 import { useMonitorSnapshot } from '../hooks/useMonitorSnapshot';
+import { tauriClient } from '../lib/tauri';
 
 function InfoCard({ title, content }: { title: string; content: string }) {
   return (
@@ -33,6 +34,23 @@ function StateCard({ message, tone }: { message: string; tone: 'loading' | 'erro
 }
 
 export default function MonitorPage() {
+  const handleDownloadXml = async () => {
+    try {
+      const xml = await tauriClient.exportOperationsXml();
+      const blob = new Blob([xml], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio_operacoes_${new Date().toISOString().split('T')[0]}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Falha ao baixar XML:', err);
+    }
+  };
+
   const {
     error,
     runtime,
@@ -79,6 +97,16 @@ export default function MonitorPage() {
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-zinc-100">Histórico de Produção</h2>
             </div>
+
+            <button
+              onClick={handleDownloadXml}
+              className="flex items-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-950 transition-colors hover:bg-zinc-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              BAIXAR XML
+            </button>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <label htmlFor="date-filter" className="text-xs font-bold text-zinc-500 uppercase">

@@ -63,6 +63,9 @@ export const tauriClient = {
   getMonitorSnapshot() {
     return invoke<MonitorSnapshot>("get_monitor_snapshot");
   },
+  exportOperationsXml() {
+    return invoke<string>("export_operations_xml");
+  },
   searchCncFiles(input: SearchCncInput) {
     return invoke<SearchCncResult>("search_cnc_files", { input });
   },
