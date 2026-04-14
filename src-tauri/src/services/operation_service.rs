@@ -172,6 +172,25 @@ impl OperationService {
         })
     }
 
+    pub async fn force_finish_current_operation(_state: &AppState) -> Result<(), AppError> {
+        let machine_name = ConfigService::machine_name();
+
+        let active_id = LocalStoreService::with_data_mut(|data| {
+            Ok(LocalStoreService::get_active_operation_for_machine(data, &machine_name))
+        })?;
+
+        if let Some(operation_id) = active_id {
+            let input = FinishOperationInput {
+                operation_id,
+                completed_full: true,
+                incomplete_reason: None,
+            };
+            Self::finish_operation(_state, input).await?;
+        }
+
+        Ok(())
+    }
+
     pub async fn get_bootstrap_data(_state: &AppState) -> Result<BootstrapData, AppError> {
         let runtime = ConfigService::load()?;
         let data = LocalStoreService::with_data_mut(|data| {

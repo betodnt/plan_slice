@@ -451,6 +451,12 @@ impl LocalStoreService {
         operations
     }
 
+    pub(crate) fn get_active_operation_for_machine(data: &StoreData, machine_name: &str) -> Option<String> {
+        data.locks.iter()
+            .find(|lock| lock.machine_name == machine_name)
+            .map(|lock| lock.operation_id.clone())
+    }
+
     pub(crate) fn active_locks(data: &StoreData) -> Vec<ActiveLockSummary> {
         let mut locks: Vec<_> = data
             .locks
