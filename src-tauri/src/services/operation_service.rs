@@ -189,15 +189,30 @@ impl OperationService {
 }
 
 fn validate_start_input(input: &StartOperationInput) -> Result<(), AppError> {
-    if input.pedido.trim().is_empty() {
+    let pedido = input.pedido.trim();
+    if pedido.is_empty() {
         return Err(AppError::Config("pedido e obrigatorio".to_string()));
     }
-    if input.operador.trim().is_empty() {
+    if pedido.len() > 50 {
+        return Err(AppError::Config("pedido muito longo (max 50 caracteres)".to_string()));
+    }
+
+    let operador = input.operador.trim();
+    if operador.is_empty() {
         return Err(AppError::Config("operador e obrigatorio".to_string()));
     }
-    if input.maquina.trim().is_empty() {
+    if operador.len() > 100 {
+        return Err(AppError::Config("operador muito longo (max 100 caracteres)".to_string()));
+    }
+
+    let maquina = input.maquina.trim();
+    if maquina.is_empty() {
         return Err(AppError::Config("maquina e obrigatoria".to_string()));
     }
+    if maquina.len() > 100 {
+        return Err(AppError::Config("maquina muito longa (max 100 caracteres)".to_string()));
+    }
+
     if input.saida.trim().is_empty() {
         return Err(AppError::Config("saida e obrigatoria".to_string()));
     }

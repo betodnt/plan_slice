@@ -104,6 +104,7 @@ impl LocalStoreService {
         // Tenta limpar um lock possivelmente estagnado antes de entrar no loop
         Self::clear_stale_lock_file(&lock_path)?;
 
+        let mut retry_delay = 50;
         for _ in 0..50 {
             match OpenOptions::new()
                 .write(true)
@@ -124,7 +125,9 @@ impl LocalStoreService {
                 Err(error) if error.kind() == ErrorKind::AlreadyExists => {
                     // Verifica se o lock se tornou estagnado durante a espera
                     Self::clear_stale_lock_file(&lock_path)?;
-                    thread::sleep(StdDuration::from_millis(100));
+                    thread::sleep(StdDuration::from_millis(retry_delay));
+                    // Exponential backoff limitado a 1 segundo
+                    retry_delay = (retry_delay * 2).min(1000);
                 }
                 Err(error) => return Err(AppError::Io(error.to_string())),
             }
@@ -168,12 +171,16 @@ impl LocalStoreService {
     fn save_unlocked(data: &StoreData) -> Result<(), AppError> {
         let store_path = Self::ensure_store()?;
         let temp_path = store_path.with_extension("json.tmp");
+        let bak_path = store_path.with_extension("json.bak");
+
         let content = serde_json::to_string_pretty(data)
             .map_err(|error| AppError::Internal(format!("Falha ao salvar o armazenamento: {error}")))?;
 
         fs::write(&temp_path, content)?;
 
         if store_path.exists() {
+            // Cria backup antes de sobrescrever
+            let _ = fs::copy(&store_path, &bak_path);
             fs::remove_file(&store_path)?;
         }
 
