@@ -51,6 +51,7 @@ pub async fn validate_system_paths() -> Result<Vec<PathStatus>, ErrorResponse> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::commands::config_commands::get_runtime_config;
 
     #[tokio::test]
     async fn test_health_check_returns_ok() {
@@ -61,8 +62,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_runtime_config_has_production_env() {
-        // Mock env var se necessário
-        std::env::set_var("PCP_MACHINE_ID", "Test-Machine");
+        std::env::set_var("MACHINE_NAME", "Test-Machine");
+        std::env::set_var("APP_ENV", "production");
+
         let config = get_runtime_config().await.unwrap();
         assert_eq!(config.machine_name, "Test-Machine");
         assert_eq!(config.app_env, "production");

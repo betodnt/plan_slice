@@ -7,6 +7,14 @@ use crate::error::AppError;
 pub struct FileService;
 
 impl FileService {
+    pub fn sanitize_filename(filename: &str) -> String {
+        filename
+            .chars()
+            .filter(|&c| c.is_alphanumeric() || c == '.' || c == '_' || c == '-' || c == '(' || c == ')' || c == ' ')
+            .collect::<String>()
+            .replace("..", ".")
+    }
+
     fn same_path(src: &Path, dst: &Path) -> bool {
         src == dst
     }
@@ -82,8 +90,9 @@ impl FileService {
     }
 
     pub fn find_existing_file(filename: &str, base_paths: &[PathBuf]) -> Option<PathBuf> {
+        let safe_filename = Self::sanitize_filename(filename);
         for base_path in base_paths {
-            let candidate = base_path.join(filename);
+            let candidate = base_path.join(&safe_filename);
             if candidate.exists() {
                 return Some(candidate);
             }

@@ -4,6 +4,7 @@ import { ControlPanel } from './components/main/ControlPanel';
 import { FinishOperationModal } from './components/main/FinishOperationModal';
 import { HistoryPanel } from './components/main/HistoryPanel';
 import { MonitorAccessModal } from './components/main/MonitorAccessModal';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useActiveOperation } from './hooks/useActiveOperation';
 import { getErrorMessage } from './lib/errors';
 import { tauriClient } from './lib/tauri';
@@ -509,5 +510,9 @@ function MainApp() {
 }
 
 export default function App() {
-  return detectMonitorView() ? <MonitorPage /> : <MainApp />;
+  return (
+    <ErrorBoundary>
+      {detectMonitorView() ? <MonitorPage /> : <MainApp />}
+    </ErrorBoundary>
+  );
 }

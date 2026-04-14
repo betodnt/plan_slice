@@ -5,8 +5,9 @@ pub mod models;
 pub mod services;
 pub mod state;
 
+use crate::services::operation_service::OperationService;
 use crate::state::AppState;
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -37,9 +38,20 @@ where
             commands::operation_commands::finish_operation,
             commands::operation_commands::touch_operation_lock,
             commands::monitor_commands::get_monitor_snapshot,
+            commands::monitor_commands::export_operations_xml,
             commands::file_commands::search_cnc_files,
             commands::file_commands::open_pdf,
         ])
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { .. } = event {
+                if window.label() == "main" {
+                    let state = window.state::<AppState>();
+                    let _ = tauri::async_runtime::block_on(async {
+                        OperationService::force_finish_current_operation(state.inner()).await
+                    });
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("erro ao iniciar aplicacao tauri");
 }
