@@ -1,8 +1,31 @@
 # Plano Slice
 
-Aplicacao Tauri + React para controle de corte CNC com operacao em varias maquinas ao mesmo tempo.
+Aplicação Tauri + React para controle de corte CNC com operação em várias máquinas ao mesmo tempo.
 
-## Implantacao
+## Pré-requisitos
+
+- **Node.js** (v18+)
+- **Rust** e dependências do Tauri
+- **npm**
+
+## Instalação e Execução
+
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
+
+2. Rode em modo de desenvolvimento:
+   ```bash
+   npm run tauri dev
+   ```
+
+3. Build para produção:
+   ```bash
+   npm run tauri build
+   ```
+
+## Implantação
 
 Cada PC deve rodar com:
 
@@ -12,21 +35,6 @@ Cada PC deve rodar com:
 
 Exemplo pronto: `src-tauri/.env.example`
 
-## Abrir 6 apps ao mesmo tempo
-
-Para testar no mesmo PC com 6 instancias, use:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\open-6-apps.ps1
-```
-
-O script abre 6 processos com `MACHINE_NAME` diferente em cada janela e todos usando o mesmo `APP_SHARED_STORE_PATH`.
-
-Se o executavel estiver em outro lugar:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\open-6-apps.ps1 -AppPath "C:\caminho\Plano de Corte.exe"
-```
 
 ## Comportamento
 
