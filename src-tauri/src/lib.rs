@@ -41,6 +41,7 @@ where
             commands::monitor_commands::export_operations_xml,
             commands::file_commands::search_cnc_files,
             commands::file_commands::open_pdf,
+            commands::file_commands::get_pdf_bytes,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { .. } = event {

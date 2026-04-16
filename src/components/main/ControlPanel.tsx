@@ -8,6 +8,7 @@ type ControlPanelProps = {
   runtimeMachineName?: string;
   isFormDisabled: boolean;
   availableSaidas: string[];
+  pdfUrl: string | null;
   storageOk: boolean;
   timerString: string;
   loading: boolean;
@@ -34,6 +35,7 @@ export function ControlPanel({
   runtimeMachineName,
   isFormDisabled,
   availableSaidas,
+  pdfUrl,
   storageOk,
   timerString,
   loading,
@@ -141,33 +143,45 @@ export function ControlPanel({
 
           <div className="block">
             <span className={labelClass}>Saida CNC a cortar</span>
-            <div className="grid grid-cols-[minmax(0,1fr)_110px] gap-3">
-              <select
-                className={inputClass}
-                value={form.saida}
-                onChange={(e) => onFormChange({ saida: e.target.value })}
-                disabled={isFormDisabled || availableSaidas.length === 0}
-              >
-                <option value="" />
-                {availableSaidas.map((saida) => (
-                  <option key={saida} value={saida}>
-                    {saida}
-                  </option>
-                ))}
-              </select>
+            <select
+              className={inputClass}
+              value={form.saida}
+              onChange={(e) => onFormChange({ saida: e.target.value })}
+              disabled={isFormDisabled || availableSaidas.length === 0}
+            >
+              <option value="" />
+              {availableSaidas.map((saida) => (
+                <option key={saida} value={saida}>
+                  {saida}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          {pdfUrl && (
+            <div className="col-span-full mt-4">
+              <span className={labelClass}>Miniatura do PDF (Clique para abrir)</span>
               <button
                 type="button"
-                className={`${buttonBaseClass} h-12 border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:border-amber-400/40 hover:bg-amber-500/20`}
+                className="group relative h-64 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 transition hover:border-zinc-700"
                 onClick={() => {
                   void onOpenPdf();
                 }}
-                disabled={!form.saida}
+                title="Clique para abrir o PDF completo"
               >
-                PDF
+                <iframe
+                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
+                  className="pointer-events-none h-full w-full border-none"
+                  title="PDF Preview"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/0 transition group-hover:bg-zinc-900/20">
+                  <span className="rounded-lg bg-zinc-900/80 px-4 py-2 text-xs font-bold uppercase tracking-widest text-zinc-100 opacity-0 transition group-hover:opacity-100">
+                    Abrir PDF
+                  </span>
+                </div>
               </button>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-auto grid grid-cols-1 items-end gap-x-6 gap-y-8 pt-10 sm:grid-cols-[minmax(0,1fr)_auto]">

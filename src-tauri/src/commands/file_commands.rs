@@ -37,3 +37,18 @@ pub async fn open_pdf(input: OpenPdfInput) -> Result<bool, ErrorResponse> {
         Err(AppError::Internal("PDF nao encontrado".to_string()).into())
     }
 }
+
+#[tauri::command]
+pub async fn get_pdf_bytes(input: OpenPdfInput) -> Result<Vec<u8>, ErrorResponse> {
+    let pdf_planos_path_str = ConfigService::pdf_planos_path().map_err(AppError::from)?;
+    let base_path = Path::new(&pdf_planos_path_str);
+
+    let pdf_filename = input.cnc_filename.replace(".cnc", ".pdf");
+
+    if let Some(path) = FileService::find_pdf(&pdf_filename, base_path)? {
+        let bytes = std::fs::read(path).map_err(|e| AppError::Io(e.to_string()))?;
+        Ok(bytes)
+    } else {
+        Err(AppError::Internal("PDF nao encontrado".to_string()).into())
+    }
+}

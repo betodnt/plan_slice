@@ -56,6 +56,7 @@ function MainApp() {
   const [monitor, setMonitor] = useState<MonitorSnapshot | null>(null);
   const [form, setForm] = useState<StartOperationInput>(initialForm);
   const [availableSaidas, setAvailableSaidas] = useState<string[]>([]);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [isFinishingOperation, setIsFinishingOperation] = useState(false);
@@ -158,6 +159,35 @@ function MainApp() {
     isFinishingOperation,
     onFeedback: showFeedback,
   });
+
+  useEffect(() => {
+    if (!form.saida) {
+      setPdfUrl(null);
+      return;
+    }
+
+    let active = true;
+    let url: string | null = null;
+
+    void (async () => {
+      try {
+        const bytes = await tauriClient.getPdfBytes({ cnc_filename: form.saida });
+        if (!active) return;
+
+        const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
+        url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+      } catch (err) {
+        console.warn('Erro ao carregar preview do PDF:', err);
+        if (active) setPdfUrl(null);
+      }
+    })();
+
+    return () => {
+      active = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [form.saida]);
 
   useEffect(() => {
     void loadInitialState();
@@ -459,6 +489,7 @@ function MainApp() {
           runtimeMachineName={runtime?.machine_name}
           isFormDisabled={isFormDisabled}
           availableSaidas={availableSaidas}
+          pdfUrl={pdfUrl}
           storageOk={storageOk}
           timerString={timerString}
           loading={loading}
