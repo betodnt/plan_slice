@@ -480,9 +480,10 @@ function MainApp() {
   const storageOk = !!status?.storage_ready;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100 lg:p-10">
-      <main className="mx-auto grid max-w-[1600px] gap-8 lg:grid-cols-2">
+    <div className="h-screen overflow-hidden bg-zinc-950 p-4 text-zinc-100">
+      <main className="mx-auto grid h-full max-w-[1600px] gap-4 lg:grid-cols-3">
         <HistoryPanel historyRows={historyRows} operatorName={form.operador} />
+        <div className="h-full lg:col-span-2">
         <ControlPanel
           form={form}
           operatorOptions={operatorOptions}
@@ -501,6 +502,7 @@ function MainApp() {
           onOpenPdf={handleOpenPdf}
           onOpenFinishDialog={openFinishDialog}
         />
+        </div>
       </main>
 
       {feedback ? (

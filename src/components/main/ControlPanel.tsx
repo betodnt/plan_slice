@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { SettingsGlyph } from './Icons';
 import type { OperatorSummary, StartOperationInput } from '../../types';
 
@@ -47,10 +47,17 @@ export function ControlPanel({
   onOpenPdf,
   onOpenFinishDialog,
 }: ControlPanelProps) {
+  const [previewPage, setPreviewPage] = useState(1);
+
+  // Reseta para a página 1 sempre que o PDF mudar
+  useEffect(() => {
+    setPreviewPage(1);
+  }, [pdfUrl]);
+
   return (
-    <section className="flex min-h-0 flex-col rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-sm">
+    <section className="flex h-full min-h-0 flex-col rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 shadow-2xl backdrop-blur-sm">
       <form className="flex min-h-full flex-col" onSubmit={onSubmit}>
-        <div className="mb-10 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6">
+        <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6">
           <div className="grid grid-cols-2 gap-4">
             <label className="block">
               <span className={labelClass}>Operador</span>
@@ -158,33 +165,63 @@ export function ControlPanel({
             </select>
           </div>
 
-          {pdfUrl && (
-            <div className="col-span-full mt-4">
-              <span className={labelClass}>Miniatura do PDF (Clique para abrir)</span>
-              <button
-                type="button"
-                className="group relative h-64 w-full overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 transition hover:border-zinc-700"
-                onClick={() => {
-                  void onOpenPdf();
-                }}
-                title="Clique para abrir o PDF completo"
-              >
-                <iframe
-                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                  className="pointer-events-none h-full w-full border-none"
-                  title="PDF Preview"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/0 transition group-hover:bg-zinc-900/20">
-                  <span className="rounded-lg bg-zinc-900/80 px-4 py-2 text-xs font-bold uppercase tracking-widest text-zinc-100 opacity-0 transition group-hover:opacity-100">
+          <div className="col-span-full mt-2 flex flex-col min-h-0">
+            <span className={labelClass}>Miniatura do PDF</span>
+            <div className="group relative aspect-ratio[297/210] w-1/2 md:w-1/3 lg:w-1/4 mx-auto max-h-[40vh] overflow-hidden border border-zinc-800 bg-zinc-950 transition hover:border-zinc-700 rounded-none">
+              {pdfUrl ? (
+                <>
+                  <iframe
+                    key={`${pdfUrl}-${previewPage}`}
+                    src={`${pdfUrl}#page=${previewPage}&toolbar=0&navpanes=0&scrollbar=0`}
+                    className="pointer-events-none h-full w-full border-none"
+                    title="PDF Preview"
+                  />
+                  
+                  {/* Contador de Página */}
+                  <div className="absolute top-3 left-3 z-10 rounded bg-zinc-900/80 px-2 py-1 text-[10px] font-bold text-zinc-400 uppercase tracking-widest border border-zinc-800">
+                    Página {previewPage}
+                  </div>
+
+                  {/* Controles de Navegação */}
+                  <div className="absolute inset-y-0 left-0 flex items-center px-4 opacity-0 transition group-hover:opacity-100">
+                    <button
+                      type="button"
+                      className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900/90 text-white shadow-2xl hover:bg-zinc-800 border border-zinc-700"
+                      onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
+                    >
+                      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                  </div>
+
+                  <div className="absolute inset-y-0 right-0 flex items-center px-4 opacity-0 transition group-hover:opacity-100">
+                    <button
+                      type="button"
+                      className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900/90 text-white shadow-2xl hover:bg-zinc-800 border border-zinc-700"
+                      onClick={() => setPreviewPage(p => p + 1)}
+                    >
+                      <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  </div>
+
+                  {/* Botão Abrir PDF no canto inferior direito */}
+                  <button
+                    type="button"
+                    className="absolute bottom-4 right-4 z-10 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-2xl transition hover:bg-emerald-500 active:scale-95"
+                    onClick={() => { void onOpenPdf(); }}
+                  >
                     Abrir PDF
-                  </span>
+                  </button>
+                </>
+              ) : (
+                <div className="flex h-full w-full items-center justify-center border border-dashed border-zinc-800 bg-zinc-950/50">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-700 italic">Aguardando plano de corte</span>
                 </div>
-              </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="mt-auto grid grid-cols-1 items-end gap-x-6 gap-y-8 pt-10 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="mt-auto grid grid-cols-1 items-end gap-x-6 gap-y-4 pt-4 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div
             className={`max-w-xl text-sm font-semibold ${
               storageOk ? 'text-emerald-400' : 'text-amber-400'
@@ -195,7 +232,7 @@ export function ControlPanel({
               : 'Preparando armazenamento compartilhado...'}
           </div>
 
-          <div className="justify-self-end font-digital text-right text-6xl font-bold tracking-widest text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+          <div className="justify-self-end font-digital text-right text-5xl font-bold tracking-widest text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
             {timerString}
           </div>
 

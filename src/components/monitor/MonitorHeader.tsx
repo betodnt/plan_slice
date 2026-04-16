@@ -51,7 +51,7 @@ export function MonitorHeader({
       <div className="flex flex-col justify-between rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 text-right shadow-xl backdrop-blur-sm md:col-span-2 xl:col-span-1">
         <div className="flex flex-col items-end gap-1">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Agora</p>
-          <strong className="block font-digital text-2xl font-bold leading-snug text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">
+          <strong className="block font-digital text-2xl font-bold leading-snug text-emerald-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">
             {currentTime}
           </strong>
         </div>

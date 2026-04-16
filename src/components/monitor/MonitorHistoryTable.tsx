@@ -47,14 +47,14 @@ export function MonitorHistoryTable({ rows }: MonitorHistoryTableProps) {
       </div>
 
       <div className="overflow-auto rounded-xl border border-zinc-800 bg-zinc-950">
-        <table className="min-w-[1320px] border-collapse text-sm text-zinc-200">
+        <table className="min-w-full border-collapse text-sm text-zinc-200">
           <thead className="sticky top-0 z-10 bg-zinc-900">
             <tr className="text-left">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Status
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                Operario
+                Operário
               </th>
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                 Saida CNC
@@ -80,7 +80,7 @@ export function MonitorHistoryTable({ rows }: MonitorHistoryTableProps) {
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-sm text-zinc-500">
-                  Nenhum historico encontrado.
+                  Nenhum histórico encontrado.
                 </td>
               </tr>
             ) : (

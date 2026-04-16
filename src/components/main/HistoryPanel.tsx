@@ -8,8 +8,8 @@ type HistoryPanelProps = {
 
 export function HistoryPanel({ historyRows, operatorName }: HistoryPanelProps) {
   return (
-    <section className="flex h-full min-h-[600px] flex-col rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-sm lg:min-h-0">
-      <div className="mb-6 flex items-center justify-between gap-4 border-b border-zinc-800/50 pb-6">
+    <section className="flex h-full min-h-0 flex-col rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5 shadow-2xl backdrop-blur-sm">
+      <div className="mb-4 flex items-center justify-between gap-4 border-b border-zinc-800/50 pb-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Operador selecionado

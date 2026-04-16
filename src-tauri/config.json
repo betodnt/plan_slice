@@ -1,0 +1,12 @@
+{
+  "app_env": "development",
+  "machine_name": "Bodor1 (12K)",
+  "storage_path": "V:\\8. CONTROLE DE PRODUÇÃO\\3. DADOS\\.plan_slice\\store.json",
+  "production_base_path": "V:\\8. CONTROLE DE PRODUÇÃO",
+  "server_path": "V:\\8. CONTROLE DE PRODUÇÃO\\1. SAÍDAS A CORTAR",
+  "saidas_cnc_path": "V:\\8. CONTROLE DE PRODUÇÃO\\1. SAÍDAS A CORTAR",
+  "saidas_cortadas_path": "V:\\8. CONTROLE DE PRODUÇÃO\\2. SAÍDAS CORTADAS",
+  "pdf_planos_path": "V:\\8. CONTROLE DE PRODUÇÃO\\6. PDF PLANOS",
+  "lock_timeout_seconds": 14400,
+  "store_lock_stale_seconds": 30
+}

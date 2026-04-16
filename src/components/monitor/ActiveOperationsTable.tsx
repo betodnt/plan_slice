@@ -30,7 +30,7 @@ export function ActiveOperationsTable({ rows, error }: ActiveOperationsTableProp
       ) : null}
 
       <div className="overflow-auto rounded-xl border border-zinc-800 bg-zinc-950">
-        <table className="min-w-[1080px] border-collapse text-sm text-zinc-200">
+        <table className="min-w-full border-collapse text-sm text-zinc-200">
           <thead className="sticky top-0 z-10 bg-zinc-900">
             <tr className="text-left">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
