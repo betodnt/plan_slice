@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use tauri_plugin_opener::OpenerExt;
+
 use crate::{
     db::models::{OpenPdfInput, SearchCncInput, SearchCncResult},
     error::{AppError, ErrorResponse},
@@ -21,17 +23,17 @@ pub async fn search_cnc_files(input: SearchCncInput) -> Result<SearchCncResult, 
 }
 
 #[tauri::command]
-pub async fn open_pdf(input: OpenPdfInput) -> Result<bool, ErrorResponse> {
+pub async fn open_pdf(app: tauri::AppHandle, input: OpenPdfInput) -> Result<bool, ErrorResponse> {
     let pdf_planos_path_str = ConfigService::pdf_planos_path().map_err(AppError::from)?;
     let base_path = Path::new(&pdf_planos_path_str);
 
-    let pdf_filename = input.cnc_filename.replace(".cnc", ".pdf");
+    let safe_name = FileService::sanitize_filename(&input.cnc_filename);
+    let pdf_filename = safe_name.replace(".cnc", ".pdf");
 
     if let Some(path) = FileService::find_pdf(&pdf_filename, base_path)? {
-        std::process::Command::new("cmd")
-            .args(&["/C", "start", "", &path])
-            .spawn()
-            .map_err(|e| AppError::Io(e.to_string()))?;
+        app.opener()
+            .open_path(&path, None::<&str>)
+            .map_err(|e| AppError::Io(format!("Falha ao abrir PDF: {}", e)))?;
         Ok(true)
     } else {
         Err(AppError::Internal("PDF nao encontrado".to_string()).into())
@@ -43,7 +45,8 @@ pub async fn get_pdf_bytes(input: OpenPdfInput) -> Result<Vec<u8>, ErrorResponse
     let pdf_planos_path_str = ConfigService::pdf_planos_path().map_err(AppError::from)?;
     let base_path = Path::new(&pdf_planos_path_str);
 
-    let pdf_filename = input.cnc_filename.replace(".cnc", ".pdf");
+    let safe_name = FileService::sanitize_filename(&input.cnc_filename);
+    let pdf_filename = safe_name.replace(".cnc", ".pdf");
 
     if let Some(path) = FileService::find_pdf(&pdf_filename, base_path)? {
         let bytes = std::fs::read(path).map_err(|e| AppError::Io(e.to_string()))?;

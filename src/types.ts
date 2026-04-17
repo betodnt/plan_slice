@@ -9,6 +9,8 @@ export type RuntimeConfig = {
   pdf_planos_path: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
+  monitor_username?: string | null;
+  monitor_password?: string | null;
 };
 
 export type BackendStatus = {
@@ -159,5 +161,7 @@ export type ConfigPaths = {
   pdf_planos_path: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
+  monitor_username?: string;
+  monitor_password?: string;
 };
 

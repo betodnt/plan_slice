@@ -408,6 +408,24 @@ impl LocalStoreService {
         Ok(())
     }
 
+    pub(crate) fn delete_operation(data: &mut StoreData, operation_id: &str) -> Result<(), AppError> {
+        let before = data.operations.len();
+        data.operations.retain(|item| item.operation_id != operation_id);
+        data.locks.retain(|lock| lock.operation_id != operation_id);
+
+        if data.operations.len() == before {
+            return Err(AppError::Config("Operação não encontrada para exclusão.".to_string()));
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn delete_operations_bulk(data: &mut StoreData, operation_ids: &[String]) -> Result<(), AppError> {
+        data.operations.retain(|item| !operation_ids.contains(&item.operation_id));
+        data.locks.retain(|lock| !operation_ids.contains(&lock.operation_id));
+        Ok(())
+    }
+
     pub(crate) fn touch_lock(data: &mut StoreData, operation_id: &str) -> bool {
         Self::cleanup_expired_locks(data);
 

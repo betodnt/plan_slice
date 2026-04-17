@@ -15,7 +15,8 @@ import type {
   StartOperationResult,
   SearchCncInput,
   SearchCncResult,
-  OpenPdfInput
+  OpenPdfInput,
+  MonitorLoginForm
 } from "../types";
 
 type LockHeartbeatInput = {
@@ -33,6 +34,8 @@ export type SaveConfigInput = {
   pdf_planos_path: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
+  monitor_username?: string;
+  monitor_password?: string;
 };
 
 export const tauriClient = {
@@ -80,5 +83,19 @@ export const tauriClient = {
   },
   saveConfig(input: SaveConfigInput) {
     return invoke<void>("save_config", { input });
+  },
+  deleteOperation(operation_id: string, credentials: MonitorLoginForm) {
+    return invoke<void>("delete_operation", { 
+      operationId: operation_id,
+      username: credentials.username,
+      password: credentials.password
+    });
+  },
+  deleteOperationsBulk(operation_ids: string[], credentials: MonitorLoginForm) {
+    return invoke<void>("delete_operations_bulk", { 
+      operationIds: operation_ids,
+      username: credentials.username,
+      password: credentials.password
+    });
   }
 };

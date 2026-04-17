@@ -20,11 +20,15 @@ where
 {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .setup(|app| {
-            dotenvy::dotenv().ok();
+            match dotenvy::dotenv() {
+                Ok(path) => println!(">>> DOTENV LOADED FROM: {:?}", path),
+                Err(e) => println!(">>> DOTENV ERROR: {:?}", e),
+            }
             setup(app)
-        })
+        })                  
         .invoke_handler(tauri::generate_handler![
             commands::system::validate_system_paths,
             commands::config_commands::get_runtime_config,
@@ -39,6 +43,8 @@ where
             commands::operation_commands::touch_operation_lock,
             commands::monitor_commands::get_monitor_snapshot,
             commands::monitor_commands::export_operations_xml,
+            commands::monitor_commands::delete_operation,
+            commands::monitor_commands::delete_operations_bulk,
             commands::file_commands::search_cnc_files,
             commands::file_commands::open_pdf,
             commands::file_commands::get_pdf_bytes,

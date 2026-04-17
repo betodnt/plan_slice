@@ -13,6 +13,8 @@ pub struct RuntimeConfig {
     pub pdf_planos_path: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
+    pub monitor_username: Option<String>,
+    pub monitor_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,6 +29,8 @@ pub struct SaveConfigInput {
     pub pdf_planos_path: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
+    pub monitor_username: Option<String>,
+    pub monitor_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

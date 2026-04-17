@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { PDFDocument } from 'pdf-lib';
 import { ControlPanel } from './components/main/ControlPanel';
 import { FinishOperationModal } from './components/main/FinishOperationModal';
 import { HistoryPanel } from './components/main/HistoryPanel';
@@ -57,9 +58,11 @@ function MainApp() {
   const [form, setForm] = useState<StartOperationInput>(initialForm);
   const [availableSaidas, setAvailableSaidas] = useState<string[]>([]);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfTotalPages, setPdfTotalPages] = useState<number>(0);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [isFinishingOperation, setIsFinishingOperation] = useState(false);
+  const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().split('T')[0]);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [finishDialog, setFinishDialog] = useState<FinishDialogState>({
     completedFull: true,
@@ -84,6 +87,8 @@ function MainApp() {
     pdf_planos_path: '',
     lock_timeout_seconds: 14400,
     store_lock_stale_seconds: 30,
+    monitor_username: '',
+    monitor_password: '',
   });
 
   const monitorUsernameRef = useRef<HTMLInputElement | null>(null);
@@ -154,7 +159,7 @@ function MainApp() {
     stopTimer,
   } = useActiveOperation({
     monitor,
-    machineName: form.maquina,
+    machineName: runtime?.machine_name || form.maquina,
     operatorName: form.operador,
     isFinishingOperation,
     onFeedback: showFeedback,
@@ -173,13 +178,25 @@ function MainApp() {
       try {
         const bytes = await tauriClient.getPdfBytes({ cnc_filename: form.saida });
         if (!active) return;
+        const uint8Array = new Uint8Array(bytes);
+        
+        try {
+          const pdfDoc = await PDFDocument.load(uint8Array);
+          if (active) setPdfTotalPages(pdfDoc.getPageCount());
+        } catch (pdfErr) {
+          console.warn('Erro ao ler páginas do PDF:', pdfErr);
+          if (active) setPdfTotalPages(0);
+        }
 
-        const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
+        const blob = new Blob([uint8Array], { type: 'application/pdf' });
         url = URL.createObjectURL(blob);
         setPdfUrl(url);
       } catch (err) {
         console.warn('Erro ao carregar preview do PDF:', err);
-        if (active) setPdfUrl(null);
+        if (active) {
+          setPdfUrl(null);
+          setPdfTotalPages(0);
+        }
       }
     })();
 
@@ -251,6 +268,8 @@ function MainApp() {
         pdf_planos_path: runtime.pdf_planos_path || '',
         lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
         store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
+        monitor_username: runtime.monitor_username || '',
+        monitor_password: runtime.monitor_password || '',
       });
     }
 
@@ -327,7 +346,9 @@ function MainApp() {
     async (event?: FormEvent) => {
       if (event) event.preventDefault();
 
-      if (!form.saida || !form.operador || !form.maquina) {
+      const currentMachineName = runtime?.machine_name || form.maquina;
+
+      if (!form.saida || !form.operador || !currentMachineName) {
         showFeedback('Preencha os campos obrigatorios.');
         return;
       }
@@ -335,7 +356,10 @@ function MainApp() {
       setLoading(true);
 
       try {
-        const result = await tauriClient.startOperation(form);
+        const result = await tauriClient.startOperation({
+          ...form,
+          maquina: currentMachineName,
+        });
         setActiveOperationId(result.operation_id);
         showFeedback('Corte iniciado com sucesso.');
         startTimer();
@@ -454,6 +478,8 @@ function MainApp() {
         pdf_planos_path: configPaths.pdf_planos_path,
         lock_timeout_seconds: configPaths.lock_timeout_seconds,
         store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
+        monitor_username: configPaths.monitor_username,
+        monitor_password: configPaths.monitor_password,
       });
       showFeedback('Configuracoes salvas com sucesso.');
       await loadInitialState();
@@ -469,21 +495,36 @@ function MainApp() {
     if (!monitor?.recent_operations || !form.operador.trim()) return [];
     const selectedOperator = form.operador.trim().toLocaleLowerCase('pt-BR');
 
-    return monitor.recent_operations
+    let filtered = monitor.recent_operations
       .slice()
-      .filter((row) => row.operator_name.trim().toLocaleLowerCase('pt-BR') === selectedOperator)
+      .filter((row) => row.operator_name.trim().toLocaleLowerCase('pt-BR') === selectedOperator);
+
+    if (dateFilter) {
+      filtered = filtered.filter((row) => {
+        const rowDate = new Date(row.started_at).toISOString().split('T')[0];
+        return rowDate === dateFilter;
+      });
+    }
+
+    return filtered
       .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
       .slice(0, 100);
-  }, [form.operador, monitor?.recent_operations]);
+  }, [form.operador, monitor?.recent_operations, dateFilter]);
 
   const operatorOptions = bootstrapData?.operators ?? [];
   const storageOk = !!status?.storage_ready;
 
   return (
-    <div className="h-screen overflow-hidden bg-zinc-950 p-4 text-zinc-100">
-      <main className="mx-auto grid h-full max-w-[1600px] gap-4 lg:grid-cols-3">
-        <HistoryPanel historyRows={historyRows} operatorName={form.operador} />
-        <div className="h-full lg:col-span-2">
+    <div className="h-screen overflow-hidden bg-zinc-950 p-3 text-zinc-100 sm:p-4 lg:p-5">
+      <main className="mx-auto grid h-full max-w-[1600px] gap-4 lg:grid-cols-[minmax(280px,2fr)_minmax(0,5fr)]">
+        <HistoryPanel 
+          historyRows={historyRows} 
+          operatorName={form.operador} 
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          onRefresh={handleRefreshMonitor}
+        />
+        <div className="h-full min-h-0">
         <ControlPanel
           form={form}
           operatorOptions={operatorOptions}
@@ -491,6 +532,7 @@ function MainApp() {
           isFormDisabled={isFormDisabled}
           availableSaidas={availableSaidas}
           pdfUrl={pdfUrl}
+          pdfTotalPages={pdfTotalPages}
           storageOk={storageOk}
           timerString={timerString}
           loading={loading}
@@ -506,8 +548,8 @@ function MainApp() {
       </main>
 
       {feedback ? (
-        <div className="pointer-events-none fixed inset-x-0 top-6 z-40 flex justify-center px-4">
-          <div className="max-w-xl rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-sm font-medium text-zinc-100 shadow-2xl">
+        <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center px-4 animate-[fadeSlideIn_0.3s_ease-out]">
+          <div className="pointer-events-auto max-w-xl rounded-2xl border border-zinc-700/60 bg-zinc-900/95 px-5 py-3 text-sm font-medium text-zinc-100 shadow-2xl shadow-black/40 backdrop-blur-xl">
             {feedback}
           </div>
         </div>
