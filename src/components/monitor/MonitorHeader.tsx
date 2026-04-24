@@ -4,6 +4,7 @@ type MonitorHeaderProps = {
   currentTime: string;
   lastUpdate: string;
   onRefresh: () => void;
+  minimal?: boolean;
 };
 
 function SummaryCard({ label, value }: { label: string; value: number | string }) {
@@ -21,7 +22,44 @@ export function MonitorHeader({
   currentTime,
   lastUpdate,
   onRefresh,
+  minimal = false,
 }: MonitorHeaderProps) {
+  if (minimal) {
+    return (
+      <div className="flex items-center gap-8 animate-in fade-in slide-in-from-left-4 duration-500">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-zinc-100">Painel de Controle</h1>
+            <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">{currentTime} • {lastUpdate}</p>
+          </div>
+        </div>
+
+        <div className="hidden h-8 w-px bg-zinc-800 lg:block" />
+
+        <div className="hidden items-center gap-6 lg:flex">
+           <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-zinc-500">Ativas:</span>
+              <span className="text-sm font-bold text-emerald-500">{activeCount}</span>
+           </div>
+           <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-zinc-500">Hoje:</span>
+              <span className="text-sm font-bold text-blue-500">{totalTodayCount}</span>
+           </div>
+           <button 
+             onClick={onRefresh}
+             className="ml-2 flex items-center gap-2 rounded-lg bg-zinc-800 px-3 py-1.5 text-[10px] font-bold text-zinc-300 hover:bg-zinc-700 transition-colors"
+           >
+             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+             ATUALIZAR
+           </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
       <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 shadow-xl backdrop-blur-sm sm:col-span-2 xl:col-span-1 lg:p-8">

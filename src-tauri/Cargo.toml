@@ -3,15 +3,15 @@ name = "tauri-app"
 version = "0.1.0"
 edition = "2021"
 description = "Backend Tauri/Rust para o sistema de plano de corte"
-default-run = "plano-corte"
-
-[[bin]]
-name = "plano-corte"
-path = "src/bin/plano_corte.rs"
+default-run = "plano-monitor"
 
 [[bin]]
 name = "plano-monitor"
 path = "src/bin/plano_monitor.rs"
+
+[[bin]]
+name = "plano-corte"
+path = "src/bin/plano_corte.rs"
 
 [lib]
 name = "tauri_app_lib"

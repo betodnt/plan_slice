@@ -52,6 +52,17 @@ export type OperationSummary = {
   elapsed_seconds: number | null;
   completed_full: boolean | null;
   incomplete_reason: string | null;
+  protheus_op?: string | null;
+  protheus_status?: 'pending' | 'integrated' | 'error' | null;
+};
+
+export type ProtheusOrder = {
+  op: string;
+  product_code: string;
+  product_description: string;
+  quantity: number;
+  unit: string;
+  client?: string;
 };
 
 export type ActiveLockSummary = {
@@ -83,6 +94,7 @@ export type StartOperationInput = {
   saida: string;
   tipo?: string;
   owner_id?: string;
+  protheus_op?: string;
 };
 
 export type StartOperationResult = {

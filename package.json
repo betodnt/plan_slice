@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "dev:corte": "tauri dev -- --bin plano-corte",
-    "dev:monitor": "tauri dev -- --bin plano-monitor"
+    "dev:monitor": "tauri dev -- --bin plano-monitor",
+    "build:monitor": "tauri build --bin plano-monitor"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",

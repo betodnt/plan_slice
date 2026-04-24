@@ -18,6 +18,7 @@ import type {
   FinishOperationInput,
   MonitorLoginForm,
   MonitorSnapshot,
+  ProtheusOrder,
   RuntimeConfig,
   StartOperationInput,
 } from './types';
@@ -75,6 +76,7 @@ function MainApp() {
     username: '',
     password: '',
   });
+  const [protheusOrder, setProtheusOrder] = useState<ProtheusOrder | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [configPaths, setConfigPaths] = useState<ConfigPaths>({
     shared_store: '',
@@ -323,6 +325,22 @@ function MainApp() {
         setForm((prev) => ({ ...prev, saida: '' }));
         showFeedback('Nenhuma saida disponivel encontrada.');
       }
+
+      // Mock Protheus Lookup for traceability
+      if (form.pedido.length >= 3) {
+        // Simulando consulta ao Protheus (Tabela SC2/OP)
+        const mockProtheusData: ProtheusOrder = {
+          op: `${form.pedido}01001`,
+          product_code: 'MP-CHAPA-GALV-01',
+          product_description: 'CHAPA GALVANIZADA 1.2MM X 1200 X 3000',
+          quantity: 1,
+          unit: 'PC',
+        };
+        setProtheusOrder(mockProtheusData);
+        setForm(prev => ({ ...prev, protheus_op: mockProtheusData.op }));
+      } else {
+        setProtheusOrder(null);
+      }
     } catch (error) {
       showFeedback(getErrorMessage(error));
       setAvailableSaidas([]);
@@ -402,8 +420,9 @@ function MainApp() {
       try {
         const result = await tauriClient.finishOperation(finishPayload);
 
-        showFeedback(`Operacao finalizada. Tempo: ${result.elapsed_seconds}s`);
+        showFeedback(`Operacao finalizada. Tempo: ${result.elapsed_seconds}s. Apontamento enviado ao Protheus (OP: ${form.protheus_op}).`);
         setForm((prev) => ({ ...prev, saida: '', pedido: prev.pedido }));
+        setProtheusOrder(null);
         setAvailableSaidas([]);
         setFinishDialog({
           completedFull: true,
@@ -543,6 +562,7 @@ function MainApp() {
           onPedidoLookup={handleSearchCnc}
           onOpenPdf={handleOpenPdf}
           onOpenFinishDialog={openFinishDialog}
+          protheusOrder={protheusOrder}
         />
         </div>
       </main>

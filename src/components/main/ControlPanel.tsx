@@ -20,6 +20,7 @@ type ControlPanelProps = {
   onPedidoLookup: () => void | Promise<void>;
   onOpenPdf: () => void | Promise<void>;
   onOpenFinishDialog: () => void;
+  protheusOrder?: import('../../types').ProtheusOrder | null;
 };
 
 const labelClass = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500';
@@ -48,6 +49,7 @@ export function ControlPanel({
   onPedidoLookup,
   onOpenPdf,
   onOpenFinishDialog,
+  protheusOrder,
 }: ControlPanelProps) {
   const [previewPage, setPreviewPage] = useState(1);
 
@@ -166,6 +168,30 @@ export function ControlPanel({
             </select>
           </div>
         </div>
+
+        {/* ── Info do Protheus (Rastreabilidade) ── */}
+        {protheusOrder && (
+          <div className="mb-5 animate-[fadeSlideIn_0.2s_ease-out] rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4 backdrop-blur-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Dados do Protheus (Rastreabilidade)</span>
+              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[9px] font-bold text-blue-300">OP: {protheusOrder.op}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+              <div>
+                <span className="block text-[9px] font-semibold uppercase text-zinc-500">Produto</span>
+                <span className="font-medium text-zinc-200">{protheusOrder.product_code}</span>
+              </div>
+              <div className="col-span-1 sm:col-span-2">
+                <span className="block text-[9px] font-semibold uppercase text-zinc-500">Descrição</span>
+                <span className="line-clamp-1 font-medium text-zinc-200">{protheusOrder.product_description}</span>
+              </div>
+              <div>
+                <span className="block text-[9px] font-semibold uppercase text-zinc-500">Quantidade</span>
+                <span className="font-medium text-zinc-200">{protheusOrder.quantity} {protheusOrder.unit}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Preview do PDF ── */}
         <div className="flex min-h-0 flex-1 flex-col">
