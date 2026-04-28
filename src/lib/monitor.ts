@@ -1,5 +1,13 @@
 import type { OperationSummary } from '../types';
 
+export function getLocalDateKey(value: string | number | Date = new Date()): string {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function formatElapsedSeconds(totalSeconds: number): string {
   const safeSeconds = Math.max(0, totalSeconds);
   const h = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');

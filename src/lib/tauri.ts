@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AppInstanceHeartbeatInput,
+  AppInstanceHeartbeatResult,
   BackendStatus,
   BootstrapData,
   BootstrapResult,
@@ -34,8 +36,6 @@ export type SaveConfigInput = {
   pdf_planos_path: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
-  monitor_username?: string;
-  monitor_password?: string;
 };
 
 export const tauriClient = {
@@ -62,6 +62,9 @@ export const tauriClient = {
   },
   touchOperationLock(input: LockHeartbeatInput) {
     return invoke<LockHeartbeatResult>("touch_operation_lock", { input });
+  },
+  touchAppInstance(input: AppInstanceHeartbeatInput) {
+    return invoke<AppInstanceHeartbeatResult>("touch_app_instance", { input });
   },
   getMonitorSnapshot() {
     return invoke<MonitorSnapshot>("get_monitor_snapshot");

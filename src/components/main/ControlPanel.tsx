@@ -20,7 +20,6 @@ type ControlPanelProps = {
   onPedidoLookup: () => void | Promise<void>;
   onOpenPdf: () => void | Promise<void>;
   onOpenFinishDialog: () => void;
-  protheusOrder?: import('../../types').ProtheusOrder | null;
 };
 
 const labelClass = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500';
@@ -49,7 +48,6 @@ export function ControlPanel({
   onPedidoLookup,
   onOpenPdf,
   onOpenFinishDialog,
-  protheusOrder,
 }: ControlPanelProps) {
   const [previewPage, setPreviewPage] = useState(1);
 
@@ -60,8 +58,6 @@ export function ControlPanel({
   return (
     <section className="flex h-full min-h-0 flex-col rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5 shadow-2xl backdrop-blur-sm lg:p-6">
       <form className="flex h-full min-h-0 flex-col" onSubmit={onSubmit}>
-
-        {/* ── Operador + Máquina + Settings ── */}
         <div className="mb-5 flex items-end gap-3">
           <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
@@ -77,8 +73,8 @@ export function ControlPanel({
             </label>
 
             <div className="block">
-              <span className={labelClass}>Nome da máquina</span>
-              <div className={`${inputClass} flex items-center bg-zinc-950/50 font-semibold text-emerald-400 cursor-default select-none`}>
+              <span className={labelClass}>Nome da maquina</span>
+              <div className={`${inputClass} flex cursor-default select-none items-center bg-zinc-950/50 font-semibold text-emerald-400`}>
                 {runtimeMachineName || 'Carregando...'}
               </div>
             </div>
@@ -93,14 +89,13 @@ export function ControlPanel({
           <button
             type="button"
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 transition-colors duration-150 hover:border-zinc-600 hover:bg-zinc-800 hover:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-            title="Configurações e monitor"
+            title="Configuracoes e monitor"
             onClick={onOpenMonitorLogin}
           >
             <SettingsGlyph />
           </button>
         </div>
 
-        {/* ── Campos do formulário — grid 2×2 simétrico ── */}
         <div className="mb-5 grid grid-cols-1 gap-x-3 gap-y-4 sm:grid-cols-2">
           <label className="block">
             <span className={labelClass}>Tipo</span>
@@ -134,7 +129,7 @@ export function ControlPanel({
                 }
               }}
               disabled={isFormDisabled}
-              placeholder="Número do pedido"
+              placeholder="Numero do pedido"
             />
           </label>
 
@@ -152,7 +147,7 @@ export function ControlPanel({
           </label>
 
           <div className="block">
-            <span className={labelClass}>Saída CNC a cortar</span>
+            <span className={labelClass}>Saida CNC a cortar</span>
             <select
               className={inputClass}
               value={form.saida}
@@ -169,34 +164,12 @@ export function ControlPanel({
           </div>
         </div>
 
-        {/* ── Info do Protheus (Rastreabilidade) ── */}
-        {protheusOrder && (
-          <div className="mb-5 animate-[fadeSlideIn_0.2s_ease-out] rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4 backdrop-blur-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Dados do Protheus (Rastreabilidade)</span>
-              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[9px] font-bold text-blue-300">OP: {protheusOrder.op}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-              <div>
-                <span className="block text-[9px] font-semibold uppercase text-zinc-500">Produto</span>
-                <span className="font-medium text-zinc-200">{protheusOrder.product_code}</span>
-              </div>
-              <div className="col-span-1 sm:col-span-2">
-                <span className="block text-[9px] font-semibold uppercase text-zinc-500">Descrição</span>
-                <span className="line-clamp-1 font-medium text-zinc-200">{protheusOrder.product_description}</span>
-              </div>
-              <div>
-                <span className="block text-[9px] font-semibold uppercase text-zinc-500">Quantidade</span>
-                <span className="font-medium text-zinc-200">{protheusOrder.quantity} {protheusOrder.unit}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Preview do PDF ── */}
         <div className="flex min-h-0 flex-1 flex-col">
           <span className={labelClass}>Miniatura do PDF</span>
-          <div className="group relative mx-auto aspect-[297/210] w-full max-w-[520px] flex-1 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 transition-colors duration-200 hover:border-zinc-600" style={{ maxHeight: '38vh' }}>
+          <div
+            className="group relative mx-auto aspect-[297/210] w-full max-w-[520px] flex-1 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 transition-colors duration-200 hover:border-zinc-600"
+            style={{ maxHeight: '38vh' }}
+          >
             {pdfUrl ? (
               <>
                 <iframe
@@ -207,21 +180,22 @@ export function ControlPanel({
                   scrolling="no"
                   title="PDF Preview"
                 />
-                
-                {/* Página atual */}
-                <div className="absolute top-2.5 left-2.5 z-10 rounded-md bg-zinc-900/85 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400 border border-zinc-700/50 backdrop-blur-sm">
-                  Página {previewPage}{pdfTotalPages > 0 ? ` de ${pdfTotalPages}` : ''}
+
+                <div className="absolute left-2.5 top-2.5 z-10 rounded-md border border-zinc-700/50 bg-zinc-900/85 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400 backdrop-blur-sm">
+                  Pagina {previewPage}
+                  {pdfTotalPages > 0 ? ` de ${pdfTotalPages}` : ''}
                 </div>
 
-                {/* Navegação ← → */}
                 {previewPage > 1 && (
                   <div className="absolute inset-y-0 left-0 flex items-center px-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <button
                       type="button"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/90 text-white shadow-xl transition-colors hover:bg-zinc-700 border border-zinc-700/60"
-                      onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700/60 bg-zinc-900/90 text-white shadow-xl transition-colors hover:bg-zinc-700"
+                      onClick={() => setPreviewPage((p) => Math.max(1, p - 1))}
                     >
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
                     </button>
                   </div>
                 )}
@@ -230,10 +204,12 @@ export function ControlPanel({
                   <div className="absolute inset-y-0 right-0 flex items-center px-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <button
                       type="button"
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/90 text-white shadow-xl transition-colors hover:bg-zinc-700 border border-zinc-700/60"
-                      onClick={() => setPreviewPage(p => p + 1)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-700/60 bg-zinc-900/90 text-white shadow-xl transition-colors hover:bg-zinc-700"
+                      onClick={() => setPreviewPage((p) => p + 1)}
                     >
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </button>
                   </div>
                 )}
@@ -245,13 +221,14 @@ export function ControlPanel({
             )}
           </div>
 
-          {/* Botão Abrir PDF — abaixo da miniatura */}
           {pdfUrl ? (
             <div className="mx-auto mt-3 w-full max-w-[520px]">
               <button
                 type="button"
-                className="w-full rounded-xl border border-emerald-500/40 bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-all duration-150 hover:bg-emerald-500 hover:border-emerald-400 active:scale-[0.98]"
-                onClick={() => { void onOpenPdf(); }}
+                className="w-full rounded-xl border border-emerald-500/40 bg-emerald-600 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-all duration-150 hover:border-emerald-400 hover:bg-emerald-500 active:scale-[0.98]"
+                onClick={() => {
+                  void onOpenPdf();
+                }}
               >
                 Abrir PDF
               </button>
@@ -259,17 +236,10 @@ export function ControlPanel({
           ) : null}
         </div>
 
-        {/* ── Barra inferior: Status + Timer + Botões ── */}
         <div className="mt-auto border-t border-zinc-800/60 pt-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div
-              className={`text-sm font-semibold ${
-                storageOk ? 'text-emerald-400' : 'text-amber-400'
-              }`}
-            >
-              {storageOk
-                ? '● Pastas e gravação compartilhada OK'
-                : '○ Preparando armazenamento compartilhado...'}
+            <div className={`text-sm font-semibold ${storageOk ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {storageOk ? '● Pastas e gravacao compartilhada OK' : '○ Preparando armazenamento compartilhado...'}
             </div>
 
             <div className="flex items-center gap-5">
@@ -279,14 +249,14 @@ export function ControlPanel({
               <div className="flex gap-2.5">
                 <button
                   type="submit"
-                  className={`${buttonBaseClass} h-11 min-w-[7rem] border border-emerald-500 bg-emerald-500 text-zinc-950 hover:bg-emerald-400 hover:border-emerald-400`}
+                  className={`${buttonBaseClass} h-11 min-w-[7rem] border border-emerald-500 bg-emerald-500 text-zinc-950 hover:border-emerald-400 hover:bg-emerald-400`}
                   disabled={loading || activeOperationId !== ''}
                 >
                   Iniciar
                 </button>
                 <button
                   type="button"
-                  className={`${buttonBaseClass} h-11 min-w-[7rem] border border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700 hover:border-zinc-600`}
+                  className={`${buttonBaseClass} h-11 min-w-[7rem] border border-zinc-700 bg-zinc-800 text-zinc-100 hover:border-zinc-600 hover:bg-zinc-700`}
                   disabled={activeOperationId === '' || loading}
                   onClick={onOpenFinishDialog}
                 >

@@ -1,10 +1,10 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 
 type KpiCardProps = {
   title: string;
   value: string | number;
   subtitle: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   trend?: {
     value: string;
     isUp: boolean;

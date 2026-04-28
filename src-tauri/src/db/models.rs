@@ -13,8 +13,6 @@ pub struct RuntimeConfig {
     pub pdf_planos_path: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
-    pub monitor_username: Option<String>,
-    pub monitor_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,8 +27,6 @@ pub struct SaveConfigInput {
     pub pdf_planos_path: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
-    pub monitor_username: Option<String>,
-    pub monitor_password: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,7 +85,17 @@ pub struct ActiveLockSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppInstanceSummary {
+    pub instance_id: String,
+    pub machine_name: String,
+    pub view_label: String,
+    pub last_seen_at: DateTime<Utc>,
+    pub active_operation_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonitorSnapshot {
+    pub app_instances: Vec<AppInstanceSummary>,
     pub active_operations: Vec<OperationSummary>,
     pub active_locks: Vec<ActiveLockSummary>,
     pub recent_operations: Vec<OperationSummary>,
@@ -151,6 +157,21 @@ pub struct LockHeartbeatInput {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockHeartbeatResult {
+    pub ok: bool,
+    pub message: String,
+    pub heartbeat_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AppInstanceHeartbeatInput {
+    pub instance_id: String,
+    pub machine_name: String,
+    pub view_label: String,
+    pub active_operation_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppInstanceHeartbeatResult {
     pub ok: bool,
     pub message: String,
     pub heartbeat_at: DateTime<Utc>,

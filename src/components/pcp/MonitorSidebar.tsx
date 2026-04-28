@@ -1,5 +1,3 @@
-import React from 'react';
-
 type MonitorSidebarProps = {
   activeTab: string;
   onTabChange: (tab: string) => void;

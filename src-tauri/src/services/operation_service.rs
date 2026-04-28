@@ -2,8 +2,9 @@ use chrono::Utc;
 
 use crate::{
     db::models::{
-        BootstrapData, BootstrapResult, FinishOperationInput, FinishOperationResult,
-        LockHeartbeatInput, LockHeartbeatResult, StartOperationInput, StartOperationResult,
+        AppInstanceHeartbeatInput, AppInstanceHeartbeatResult, BootstrapData, BootstrapResult,
+        FinishOperationInput, FinishOperationResult, LockHeartbeatInput, LockHeartbeatResult,
+        StartOperationInput, StartOperationResult,
     },
     error::AppError,
     services::{
@@ -128,9 +129,15 @@ impl OperationService {
             )
         })?;
 
-        let cortadas_path = ConfigService::saidas_cortadas_path()?;
-        let dst_file = Path::new(&cortadas_path).join(&saida);
         let src_file = resolve_finish_source_file(&saida)?;
+        let dst_file = if input.completed_full {
+            let cortadas_path = ConfigService::saidas_cortadas_path()?;
+            Path::new(&cortadas_path).join(&saida)
+        } else {
+            let server_path = ConfigService::server_path()?;
+            let partial_name = FileService::build_partial_filename(&saida);
+            FileService::unique_destination_path(Path::new(&server_path), &partial_name)
+        };
 
         if src_file != dst_file {
             if let Err(error) = FileService::move_file(&src_file, &dst_file) {
@@ -145,7 +152,17 @@ impl OperationService {
             operation_id,
             status: "finished".to_string(),
             elapsed_seconds,
-            message: "operacao finalizada com sucesso".to_string(),
+            message: if input.completed_full {
+                "operacao finalizada com sucesso".to_string()
+            } else {
+                format!(
+                    "operacao finalizada como parcial; arquivo retornado para SAIDAS A CORTAR como {}",
+                    dst_file
+                        .file_name()
+                        .and_then(|value| value.to_str())
+                        .unwrap_or("plano_parcial")
+                )
+            },
         })
     }
 
@@ -172,23 +189,33 @@ impl OperationService {
         })
     }
 
-    pub async fn force_finish_current_operation(_state: &AppState) -> Result<(), AppError> {
-        let machine_name = ConfigService::machine_name();
-
-        let active_id = LocalStoreService::with_data_mut(|data| {
-            Ok(LocalStoreService::get_active_operation_for_machine(data, &machine_name))
-        })?;
-
-        if let Some(operation_id) = active_id {
-            let input = FinishOperationInput {
-                operation_id,
-                completed_full: true,
-                incomplete_reason: None,
-            };
-            Self::finish_operation(_state, input).await?;
+    pub async fn touch_app_instance(
+        _state: &AppState,
+        input: AppInstanceHeartbeatInput,
+    ) -> Result<AppInstanceHeartbeatResult, AppError> {
+        if input.instance_id.trim().is_empty() {
+            return Err(AppError::Config("instance_id e obrigatorio".to_string()));
         }
 
-        Ok(())
+        if input.machine_name.trim().is_empty() {
+            return Err(AppError::Config("machine_name e obrigatorio".to_string()));
+        }
+
+        let touched = LocalStoreService::with_data_mut(|data| {
+            Ok(LocalStoreService::touch_app_instance(
+                data,
+                input.instance_id.trim(),
+                input.machine_name.trim(),
+                input.view_label.trim(),
+                input.active_operation_id.as_deref(),
+            ))
+        })?;
+
+        Ok(AppInstanceHeartbeatResult {
+            ok: touched,
+            message: "instancia monitorada".to_string(),
+            heartbeat_at: Utc::now(),
+        })
     }
 
     pub async fn get_bootstrap_data(_state: &AppState) -> Result<BootstrapData, AppError> {

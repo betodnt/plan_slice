@@ -32,7 +32,6 @@ export function FinishOperationModal({
   onChange,
   onSubmit,
 }: FinishOperationModalProps) {
-
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,13 +57,13 @@ export function FinishOperationModal({
         aria-labelledby="finish-operation-modal-title"
       >
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
-          Finalização do plano
+          Finalizacao do plano
         </p>
         <h3 id="finish-operation-modal-title" className="text-xl font-semibold text-zinc-100">
           O plano foi cortado completo?
         </h3>
         <p className="mt-2 text-sm text-zinc-400">
-          Confirme o status da operação antes de concluir o registro.
+          Confirme o status da operacao antes de concluir o registro.
         </p>
 
         <form className="mt-6 space-y-5" onSubmit={onSubmit}>
@@ -76,13 +75,12 @@ export function FinishOperationModal({
                   ? 'border-emerald-500 bg-emerald-500 text-zinc-950'
                   : 'border-zinc-800 bg-zinc-950 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800'
               }`}
-              onClick={() => {
+              onClick={() =>
                 onChange({
                   completedFull: true,
                   incompleteReason: '',
-                });
-                onSubmit();
-              }}
+                })
+              }
               disabled={loading}
               aria-pressed={finishDialog.completedFull}
             >
@@ -103,15 +101,15 @@ export function FinishOperationModal({
               disabled={loading}
               aria-pressed={!finishDialog.completedFull}
             >
-              NÃO
+              NAO
             </button>
           </div>
 
-          {!finishDialog.completedFull ? (
-            <div className="space-y-4">
+          <div className="space-y-4">
+            {!finishDialog.completedFull ? (
               <label className="block space-y-2">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Por quê?
+                  Por que?
                 </span>
                 <textarea
                   ref={finishReasonRef}
@@ -127,21 +125,26 @@ export function FinishOperationModal({
                   required
                 />
               </label>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  type="button"
-                  className={secondaryButtonClass}
-                  onClick={onClose}
-                  disabled={loading}
-                >
-                  CANCELAR
-                </button>
-                <button type="submit" className={primaryButtonClass} disabled={loading}>
-                  {loading ? 'CONFIRMANDO...' : 'CONFIRMAR'}
-                </button>
+            ) : (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-sm text-zinc-400">
+                Confirmar como plano completo finaliza a operacao e libera a saida para o proximo app.
               </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                className={secondaryButtonClass}
+                onClick={onClose}
+                disabled={loading}
+              >
+                CANCELAR
+              </button>
+              <button type="submit" className={primaryButtonClass} disabled={loading}>
+                {loading ? 'CONFIRMANDO...' : 'CONFIRMAR'}
+              </button>
             </div>
-          ) : null}
+          </div>
         </form>
       </section>
     </div>

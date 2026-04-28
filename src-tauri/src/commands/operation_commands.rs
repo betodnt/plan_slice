@@ -2,8 +2,9 @@ use tauri::State;
 
 use crate::{
     db::models::{
-        BootstrapData, BootstrapResult, FinishOperationInput, FinishOperationResult,
-        LockHeartbeatInput, LockHeartbeatResult, StartOperationInput, StartOperationResult,
+        AppInstanceHeartbeatInput, AppInstanceHeartbeatResult, BootstrapData, BootstrapResult,
+        FinishOperationInput, FinishOperationResult, LockHeartbeatInput, LockHeartbeatResult,
+        StartOperationInput, StartOperationResult,
     },
     error::ErrorResponse,
     services::operation_service::OperationService,
@@ -45,6 +46,16 @@ pub async fn touch_operation_lock(
     input: LockHeartbeatInput,
 ) -> Result<LockHeartbeatResult, ErrorResponse> {
     OperationService::touch_lock(state.inner(), input)
+        .await
+        .map_err(Into::into)
+}
+
+#[tauri::command]
+pub async fn touch_app_instance(
+    state: State<'_, AppState>,
+    input: AppInstanceHeartbeatInput,
+) -> Result<AppInstanceHeartbeatResult, ErrorResponse> {
+    OperationService::touch_app_instance(state.inner(), input)
         .await
         .map_err(Into::into)
 }

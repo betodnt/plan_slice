@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::{
     db::models::{
-        ActiveLockSummary, MachineSummary, OperationSummary, OperatorSummary,
+        ActiveLockSummary, AppInstanceSummary, MachineSummary, OperationSummary, OperatorSummary,
     },
     error::AppError,
     services::config_service::ConfigService,
@@ -48,6 +48,15 @@ struct LockRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+struct AppInstanceRecord {
+    instance_id: String,
+    machine_name: String,
+    view_label: String,
+    last_seen_at: chrono::DateTime<Utc>,
+    active_operation_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct StoreData {
     next_machine_id: i64,
     next_operator_id: i64,
@@ -55,6 +64,7 @@ pub(crate) struct StoreData {
     operators: Vec<OperatorSummary>,
     operations: Vec<OperationRecord>,
     locks: Vec<LockRecord>,
+    app_instances: Vec<AppInstanceRecord>,
 }
 
 impl Default for StoreData {
@@ -66,6 +76,7 @@ impl Default for StoreData {
             operators: Vec::new(),
             operations: Vec::new(),
             locks: Vec::new(),
+            app_instances: Vec::new(),
         }
     }
 }
@@ -199,6 +210,11 @@ impl LocalStoreService {
         Ok(result)
     }
 
+    pub(crate) fn load() -> Result<StoreData, AppError> {
+        let _guard = Self::acquire_store_lock()?;
+        Self::load_unlocked()
+    }
+
     pub fn ensure_store() -> Result<PathBuf, AppError> {
         let store_path = ConfigService::storage_file_path()?;
 
@@ -219,11 +235,6 @@ impl LocalStoreService {
         Self::ensure_store().is_ok()
     }
 
-    pub(crate) fn load() -> Result<StoreData, AppError> {
-        let _guard = Self::acquire_store_lock()?;
-        Self::load_unlocked()
-    }
-
     pub fn bootstrap(machine_name: &str) -> Result<(), AppError> {
         Self::with_data_mut(|data| {
             Self::ensure_machine(data, machine_name);
@@ -235,6 +246,13 @@ impl LocalStoreService {
         let timeout = ConfigService::lock_timeout_seconds();
         let threshold = Utc::now() - Duration::seconds(timeout);
         data.locks.retain(|lock| lock.heartbeat_at >= threshold);
+    }
+
+    pub(crate) fn cleanup_stale_app_instances(data: &mut StoreData) {
+        let timeout = ConfigService::store_lock_stale_seconds().max(15);
+        let threshold = Utc::now() - Duration::seconds(timeout);
+        data.app_instances
+            .retain(|instance| instance.last_seen_at >= threshold);
     }
 
     pub(crate) fn ensure_machine(data: &mut StoreData, machine_name: &str) -> i64 {
@@ -268,6 +286,7 @@ impl LocalStoreService {
         id
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn start_operation(
         data: &mut StoreData,
         pedido: &str,
@@ -332,6 +351,45 @@ impl LocalStoreService {
         }
 
         Ok(())
+    }
+
+    pub(crate) fn touch_app_instance(
+        data: &mut StoreData,
+        instance_id: &str,
+        machine_name: &str,
+        view_label: &str,
+        active_operation_id: Option<&str>,
+    ) -> bool {
+        Self::cleanup_stale_app_instances(data);
+
+        let now = Utc::now();
+        if let Some(instance) = data
+            .app_instances
+            .iter_mut()
+            .find(|item| item.instance_id == instance_id)
+        {
+            instance.machine_name = machine_name.to_string();
+            instance.view_label = view_label.to_string();
+            instance.last_seen_at = now;
+            instance.active_operation_id = active_operation_id
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            return true;
+        }
+
+        data.app_instances.push(AppInstanceRecord {
+            instance_id: instance_id.to_string(),
+            machine_name: machine_name.to_string(),
+            view_label: view_label.to_string(),
+            last_seen_at: now,
+            active_operation_id: active_operation_id
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned),
+        });
+
+        true
     }
 
     pub(crate) fn finish_operation(
@@ -469,12 +527,6 @@ impl LocalStoreService {
         operations
     }
 
-    pub(crate) fn get_active_operation_for_machine(data: &StoreData, machine_name: &str) -> Option<String> {
-        data.locks.iter()
-            .find(|lock| lock.machine_name == machine_name)
-            .map(|lock| lock.operation_id.clone())
-    }
-
     pub(crate) fn active_locks(data: &StoreData) -> Vec<ActiveLockSummary> {
         let mut locks: Vec<_> = data
             .locks
@@ -490,6 +542,23 @@ impl LocalStoreService {
 
         locks.sort_by(|a, b| b.heartbeat_at.cmp(&a.heartbeat_at));
         locks
+    }
+
+    pub(crate) fn active_app_instances(data: &StoreData) -> Vec<AppInstanceSummary> {
+        let mut instances = data
+            .app_instances
+            .iter()
+            .map(|instance| AppInstanceSummary {
+                instance_id: instance.instance_id.clone(),
+                machine_name: instance.machine_name.clone(),
+                view_label: instance.view_label.clone(),
+                last_seen_at: instance.last_seen_at,
+                active_operation_id: instance.active_operation_id.clone(),
+            })
+            .collect::<Vec<_>>();
+
+        instances.sort_by(|a, b| b.last_seen_at.cmp(&a.last_seen_at));
+        instances
     }
 
     pub(crate) fn machines(data: &StoreData) -> Vec<MachineSummary> {

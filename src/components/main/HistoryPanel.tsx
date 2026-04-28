@@ -1,4 +1,4 @@
-import { formatDuration, formatElapsedSeconds } from '../../lib/monitor';
+import { formatDuration, formatElapsedSeconds, getLocalDateKey } from '../../lib/monitor';
 import type { OperationSummary } from '../../types';
 
 type HistoryPanelProps = {
@@ -33,7 +33,7 @@ export function HistoryPanel({ historyRows, operatorName, dateFilter, setDateFil
           />
           <button
             onClick={() => {
-              setDateFilter(new Date().toISOString().split('T')[0]);
+              setDateFilter(getLocalDateKey());
               if (onRefresh) onRefresh();
             }}
             title="Atualizar e voltar para hoje"

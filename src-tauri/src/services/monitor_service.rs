@@ -11,16 +11,17 @@ pub struct MonitorService;
 
 impl MonitorService {
     pub async fn get_snapshot(_state: &AppState) -> Result<MonitorSnapshot, AppError> {
-        LocalStoreService::with_data_mut(|data| {
-            LocalStoreService::cleanup_expired_locks(data);
+        let mut data = LocalStoreService::load()?;
+        LocalStoreService::cleanup_expired_locks(&mut data);
+        LocalStoreService::cleanup_stale_app_instances(&mut data);
 
-            Ok(MonitorSnapshot {
-                active_operations: LocalStoreService::active_operations(data),
-                active_locks: LocalStoreService::active_locks(data),
-                recent_operations: LocalStoreService::recent_operations(data, 1000),
-                machines: LocalStoreService::machines(data),
-                generated_at: Utc::now(),
-            })
+        Ok(MonitorSnapshot {
+            app_instances: LocalStoreService::active_app_instances(&data),
+            active_operations: LocalStoreService::active_operations(&data),
+            active_locks: LocalStoreService::active_locks(&data),
+            recent_operations: LocalStoreService::recent_operations(&data, 1000),
+            machines: LocalStoreService::machines(&data),
+            generated_at: Utc::now(),
         })
     }
 }

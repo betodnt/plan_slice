@@ -27,7 +27,7 @@ const secondaryButtonClass =
 const primaryButtonClass =
   'inline-flex min-w-28 items-center justify-center rounded-xl border border-emerald-500 bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-all duration-150 hover:border-emerald-400 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97]';
 
-const labelSpanClass = 'text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500 mb-1.5 block';
+const labelSpanClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500';
 
 type TabType = 'caminhos' | 'avancado';
 
@@ -97,14 +97,14 @@ export function MonitorAccessModal({
                 Login Administrativo
               </h3>
               <p className="mt-2 text-sm text-zinc-400">
-                Informe as credenciais para acessar as configurações do sistema.
+                Informe as credenciais para acessar as configuracoes do sistema.
               </p>
             </div>
 
             <form className="space-y-5" onSubmit={onConfirmMonitorLogin}>
               <div className="space-y-4">
                 <label className="block">
-                  <span className={labelSpanClass}>Usuário</span>
+                  <span className={labelSpanClass}>Usuario</span>
                   <input
                     ref={monitorUsernameRef}
                     className={inputClass}
@@ -116,7 +116,7 @@ export function MonitorAccessModal({
                     }
                     disabled={monitorLoginLoading}
                     autoComplete="username"
-                    placeholder="Seu usuário"
+                    placeholder="Seu usuario"
                   />
                 </label>
 
@@ -179,18 +179,17 @@ export function MonitorAccessModal({
           </div>
         ) : (
           <div className="flex flex-col">
-            {/* Header com Abas */}
             <div className="border-b border-zinc-800 bg-zinc-900/50 p-6 pb-0">
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <h3 id="monitor-access-modal-title" className="text-2xl font-bold text-zinc-100">
-                    Configurações
+                    Configuracoes
                   </h3>
                   <p className="mt-1 text-sm text-zinc-400">
-                    Gerencie os parâmetros e caminhos do sistema.
+                    Gerencie os parametros e caminhos do sistema.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl bg-zinc-950/50 p-1 border border-zinc-800">
+                <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-1">
                   {(['caminhos', 'avancado'] as TabType[]).map((tab) => (
                     <button
                       key={tab}
@@ -198,17 +197,16 @@ export function MonitorAccessModal({
                       className={`rounded-xl px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all ${
                         activeTab === tab
                           ? 'bg-emerald-500 text-zinc-950 shadow-lg'
-                          : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
+                          : 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300'
                       }`}
                     >
-                      {tab === 'caminhos' ? 'Caminhos' : 'Avançado'}
+                      {tab === 'caminhos' ? 'Caminhos' : 'Avancado'}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Conteúdo das Abas */}
             <div className="max-h-[60vh] overflow-y-auto p-8 pt-6 custom-scrollbar">
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {activeTab === 'caminhos' && (
@@ -259,9 +257,9 @@ export function MonitorAccessModal({
 
                     <div className="grid grid-cols-1 gap-6 border-t border-zinc-800 pt-6 sm:grid-cols-2">
                       {[
-                        { label: 'Servidor (Saídas)', key: 'server_path' },
-                        { label: 'Saídas CNC', key: 'saidas_cnc_path' },
-                        { label: 'Saídas Cortadas', key: 'saidas_cortadas_path' },
+                        { label: 'Servidor (Saidas)', key: 'server_path' },
+                        { label: 'Saidas CNC', key: 'saidas_cnc_path' },
+                        { label: 'Saidas Cortadas', key: 'saidas_cortadas_path' },
                         { label: 'PDF Planos', key: 'pdf_planos_path' },
                       ].map((item) => (
                         <label key={item.key} className="block">
@@ -292,10 +290,9 @@ export function MonitorAccessModal({
 
                 {activeTab === 'avancado' && (
                   <div className="space-y-8">
-                    {/* Campos Gerais integrados aqui */}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                       <label className="block">
-                        <span className={labelSpanClass}>Nome da máquina</span>
+                        <span className={labelSpanClass}>Nome da maquina</span>
                         <input
                           className={inputClass}
                           value={configPaths.machine_name}
@@ -324,37 +321,13 @@ export function MonitorAccessModal({
                       </label>
                     </div>
 
-                    <div className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-950/30 p-5">
+                    <div className="space-y-2 rounded-2xl border border-zinc-800 bg-zinc-950/30 p-5">
                       <p className="text-xs font-bold uppercase tracking-wider text-emerald-500/80">Credenciais do Monitor</p>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <label className="block">
-                          <span className={labelSpanClass}>Usuário Monitor</span>
-                          <input
-                            className={inputClass}
-                            value={configPaths.monitor_username || ''}
-                            onChange={(e) =>
-                              onConfigPathsChange({
-                                monitor_username: e.target.value,
-                              })
-                            }
-                            placeholder="Deixe vazio para padrão"
-                          />
-                        </label>
-                        <label className="block">
-                          <span className={labelSpanClass}>Senha Monitor</span>
-                          <input
-                            type="password"
-                            className={inputClass}
-                            value={configPaths.monitor_password || ''}
-                            onChange={(e) =>
-                              onConfigPathsChange({
-                                monitor_password: e.target.value,
-                              })
-                            }
-                            placeholder="Deixe vazio para padrão"
-                          />
-                        </label>
-                      </div>
+                      <p className="text-sm text-zinc-300">Usuario padrao: <strong>PCPCARDEROLI</strong></p>
+                      <p className="text-sm text-zinc-300">Senha padrao: <strong>pcp2026</strong></p>
+                      <p className="text-[11px] text-zinc-500">
+                        As credenciais administrativas ficaram fixas no backend para manter o mesmo acesso em qualquer instancia local.
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 border-t border-zinc-800 pt-6 sm:grid-cols-2">
@@ -366,11 +339,11 @@ export function MonitorAccessModal({
                           value={configPaths.lock_timeout_seconds}
                           onChange={(e) =>
                             onConfigPathsChange({
-                              lock_timeout_seconds: parseInt(e.target.value) || 0,
+                              lock_timeout_seconds: parseInt(e.target.value, 10) || 0,
                             })
                           }
                         />
-                        <p className="mt-1.5 text-[10px] text-zinc-500">Tempo máximo que um plano pode ficar travado.</p>
+                        <p className="mt-1.5 text-[10px] text-zinc-500">Tempo maximo que um plano pode ficar travado.</p>
                       </label>
                       <label className="block">
                         <span className={labelSpanClass}>Lock Stale (segundos)</span>
@@ -380,7 +353,7 @@ export function MonitorAccessModal({
                           value={configPaths.store_lock_stale_seconds}
                           onChange={(e) =>
                             onConfigPathsChange({
-                              store_lock_stale_seconds: parseInt(e.target.value) || 0,
+                              store_lock_stale_seconds: parseInt(e.target.value, 10) || 0,
                             })
                           }
                         />
@@ -392,7 +365,6 @@ export function MonitorAccessModal({
               </div>
             </div>
 
-            {/* Footer Fixo */}
             <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 bg-zinc-900/50 p-6 sm:flex-row sm:justify-end">
               <button type="button" className={secondaryButtonClass} onClick={onClose}>
                 FECHAR
@@ -414,7 +386,7 @@ export function MonitorAccessModal({
                     SALVANDO...
                   </span>
                 ) : (
-                  'SALVAR ALTERAÇÕES'
+                  'SALVAR ALTERACOES'
                 )}
               </button>
             </div>

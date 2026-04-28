@@ -10,8 +10,8 @@ use crate::{
 
 #[tauri::command]
 pub async fn search_cnc_files(input: SearchCncInput) -> Result<SearchCncResult, ErrorResponse> {
-    let server_path_str = ConfigService::server_path().map_err(AppError::from)?;
-    let cortadas_path_str = ConfigService::saidas_cortadas_path().map_err(AppError::from)?;
+    let server_path_str = ConfigService::server_path()?;
+    let cortadas_path_str = ConfigService::saidas_cortadas_path()?;
     let base_paths = vec![
         PathBuf::from(&server_path_str),
         PathBuf::from(&cortadas_path_str),
@@ -24,7 +24,7 @@ pub async fn search_cnc_files(input: SearchCncInput) -> Result<SearchCncResult, 
 
 #[tauri::command]
 pub async fn open_pdf(app: tauri::AppHandle, input: OpenPdfInput) -> Result<bool, ErrorResponse> {
-    let pdf_planos_path_str = ConfigService::pdf_planos_path().map_err(AppError::from)?;
+    let pdf_planos_path_str = ConfigService::pdf_planos_path()?;
     let base_path = Path::new(&pdf_planos_path_str);
 
     let safe_name = FileService::sanitize_filename(&input.cnc_filename);
@@ -42,7 +42,7 @@ pub async fn open_pdf(app: tauri::AppHandle, input: OpenPdfInput) -> Result<bool
 
 #[tauri::command]
 pub async fn get_pdf_bytes(input: OpenPdfInput) -> Result<Vec<u8>, ErrorResponse> {
-    let pdf_planos_path_str = ConfigService::pdf_planos_path().map_err(AppError::from)?;
+    let pdf_planos_path_str = ConfigService::pdf_planos_path()?;
     let base_path = Path::new(&pdf_planos_path_str);
 
     let safe_name = FileService::sanitize_filename(&input.cnc_filename);

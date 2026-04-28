@@ -1,6 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { PDFDocument } from 'pdf-lib';
 import { ControlPanel } from './components/main/ControlPanel';
 import { FinishOperationModal } from './components/main/FinishOperationModal';
 import { HistoryPanel } from './components/main/HistoryPanel';
@@ -8,6 +7,7 @@ import { MonitorAccessModal } from './components/main/MonitorAccessModal';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useActiveOperation } from './hooks/useActiveOperation';
 import { getErrorMessage } from './lib/errors';
+import { getLocalDateKey } from './lib/monitor';
 import { tauriClient } from './lib/tauri';
 import MonitorPage from './pages/MonitorPage';
 import type {
@@ -18,7 +18,6 @@ import type {
   FinishOperationInput,
   MonitorLoginForm,
   MonitorSnapshot,
-  ProtheusOrder,
   RuntimeConfig,
   StartOperationInput,
 } from './types';
@@ -30,7 +29,7 @@ const initialForm: StartOperationInput = {
   retalho: 'Chapa Inteira',
   saida: '',
   tipo: 'Avulso',
-  owner_id: 'desktop-tauri',
+  owner_id: '',
 };
 
 function detectMonitorView(): boolean {
@@ -63,7 +62,7 @@ function MainApp() {
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [isFinishingOperation, setIsFinishingOperation] = useState(false);
-  const [dateFilter, setDateFilter] = useState(() => new Date().toISOString().split('T')[0]);
+  const [dateFilter, setDateFilter] = useState(() => getLocalDateKey());
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [finishDialog, setFinishDialog] = useState<FinishDialogState>({
     completedFull: true,
@@ -76,7 +75,6 @@ function MainApp() {
     username: '',
     password: '',
   });
-  const [protheusOrder, setProtheusOrder] = useState<ProtheusOrder | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [configPaths, setConfigPaths] = useState<ConfigPaths>({
     shared_store: '',
@@ -89,13 +87,12 @@ function MainApp() {
     pdf_planos_path: '',
     lock_timeout_seconds: 14400,
     store_lock_stale_seconds: 30,
-    monitor_username: '',
-    monitor_password: '',
   });
 
   const monitorUsernameRef = useRef<HTMLInputElement | null>(null);
   const finishReasonRef = useRef<HTMLTextAreaElement | null>(null);
   const feedbackTimer = useRef<number | null>(null);
+  const instanceIdRef = useRef(`main-${crypto.randomUUID()}`);
 
   const showFeedback = useCallback((message: string) => {
     if (feedbackTimer.current !== null) {
@@ -183,6 +180,7 @@ function MainApp() {
         const uint8Array = new Uint8Array(bytes);
         
         try {
+          const { PDFDocument } = await import('pdf-lib');
           const pdfDoc = await PDFDocument.load(uint8Array);
           if (active) setPdfTotalPages(pdfDoc.getPageCount());
         } catch (pdfErr) {
@@ -223,6 +221,32 @@ function MainApp() {
       window.clearInterval(monitorInterval);
     };
   }, [handleRefreshMonitor, loadInitialState, stopTimer]);
+
+  useEffect(() => {
+    if (!runtime?.machine_name) return;
+
+    const sendPresence = async () => {
+      try {
+        await tauriClient.touchAppInstance({
+          instance_id: instanceIdRef.current,
+          machine_name: runtime.machine_name,
+          view_label: 'main',
+          active_operation_id: activeOperationId || null,
+        });
+      } catch (error) {
+        console.warn('Falha ao atualizar presenca da instancia principal:', error);
+      }
+    };
+
+    void sendPresence();
+    const heartbeatInterval = window.setInterval(() => {
+      void sendPresence();
+    }, 10000);
+
+    return () => {
+      window.clearInterval(heartbeatInterval);
+    };
+  }, [runtime?.machine_name, activeOperationId]);
 
   const handleFormChange = useCallback((patch: Partial<StartOperationInput>) => {
     setForm((current) => ({
@@ -270,8 +294,6 @@ function MainApp() {
         pdf_planos_path: runtime.pdf_planos_path || '',
         lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
         store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
-        monitor_username: runtime.monitor_username || '',
-        monitor_password: runtime.monitor_password || '',
       });
     }
 
@@ -326,21 +348,6 @@ function MainApp() {
         showFeedback('Nenhuma saida disponivel encontrada.');
       }
 
-      // Mock Protheus Lookup for traceability
-      if (form.pedido.length >= 3) {
-        // Simulando consulta ao Protheus (Tabela SC2/OP)
-        const mockProtheusData: ProtheusOrder = {
-          op: `${form.pedido}01001`,
-          product_code: 'MP-CHAPA-GALV-01',
-          product_description: 'CHAPA GALVANIZADA 1.2MM X 1200 X 3000',
-          quantity: 1,
-          unit: 'PC',
-        };
-        setProtheusOrder(mockProtheusData);
-        setForm(prev => ({ ...prev, protheus_op: mockProtheusData.op }));
-      } else {
-        setProtheusOrder(null);
-      }
     } catch (error) {
       showFeedback(getErrorMessage(error));
       setAvailableSaidas([]);
@@ -377,6 +384,7 @@ function MainApp() {
         const result = await tauriClient.startOperation({
           ...form,
           maquina: currentMachineName,
+          owner_id: instanceIdRef.current,
         });
         setActiveOperationId(result.operation_id);
         showFeedback('Corte iniciado com sucesso.');
@@ -420,9 +428,8 @@ function MainApp() {
       try {
         const result = await tauriClient.finishOperation(finishPayload);
 
-        showFeedback(`Operacao finalizada. Tempo: ${result.elapsed_seconds}s. Apontamento enviado ao Protheus (OP: ${form.protheus_op}).`);
+        showFeedback(`${result.message}. Tempo: ${result.elapsed_seconds}s.`);
         setForm((prev) => ({ ...prev, saida: '', pedido: prev.pedido }));
-        setProtheusOrder(null);
         setAvailableSaidas([]);
         setFinishDialog({
           completedFull: true,
@@ -497,8 +504,6 @@ function MainApp() {
         pdf_planos_path: configPaths.pdf_planos_path,
         lock_timeout_seconds: configPaths.lock_timeout_seconds,
         store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
-        monitor_username: configPaths.monitor_username,
-        monitor_password: configPaths.monitor_password,
       });
       showFeedback('Configuracoes salvas com sucesso.');
       await loadInitialState();
@@ -520,7 +525,7 @@ function MainApp() {
 
     if (dateFilter) {
       filtered = filtered.filter((row) => {
-        const rowDate = new Date(row.started_at).toISOString().split('T')[0];
+        const rowDate = getLocalDateKey(row.started_at);
         return rowDate === dateFilter;
       });
     }
@@ -562,7 +567,6 @@ function MainApp() {
           onPedidoLookup={handleSearchCnc}
           onOpenPdf={handleOpenPdf}
           onOpenFinishDialog={openFinishDialog}
-          protheusOrder={protheusOrder}
         />
         </div>
       </main>

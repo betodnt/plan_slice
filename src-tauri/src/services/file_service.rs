@@ -132,6 +132,48 @@ impl FileService {
         Ok(None)
     }
 
+    pub fn build_partial_filename(filename: &str) -> String {
+        let safe_name = Self::sanitize_filename(filename);
+        let path = Path::new(&safe_name);
+        let stem = path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("plano");
+        let extension = path.extension().and_then(|value| value.to_str());
+
+        match extension {
+            Some(ext) if !ext.is_empty() => format!("{stem}_parcial.{ext}"),
+            _ => format!("{stem}_parcial"),
+        }
+    }
+
+    pub fn unique_destination_path(base_dir: &Path, filename: &str) -> PathBuf {
+        let candidate = base_dir.join(filename);
+        if !candidate.exists() {
+            return candidate;
+        }
+
+        let path = Path::new(filename);
+        let stem = path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("plano_parcial");
+        let extension = path.extension().and_then(|value| value.to_str());
+
+        for index in 2..=999 {
+            let next_name = match extension {
+                Some(ext) if !ext.is_empty() => format!("{stem}_{index}.{ext}"),
+                _ => format!("{stem}_{index}"),
+            };
+            let next_path = base_dir.join(&next_name);
+            if !next_path.exists() {
+                return next_path;
+            }
+        }
+
+        candidate
+    }
+
     pub fn copy_file(src: &Path, dst: &Path) -> Result<(), AppError> {
         if Self::same_path(src, dst) {
             return Ok(());
@@ -168,5 +210,15 @@ impl FileService {
             .map_err(|e| AppError::Io(format!("Erro movendo {:?} para {:?}: {}", src, dst, e)))?;
             
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FileService;
+
+    #[test]
+    fn build_partial_filename_keeps_extension() {
+        assert_eq!(FileService::build_partial_filename("A123_plano.cnc"), "A123_plano_parcial.cnc");
     }
 }

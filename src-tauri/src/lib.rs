@@ -5,9 +5,7 @@ pub mod models;
 pub mod services;
 pub mod state;
 
-use crate::services::operation_service::OperationService;
 use crate::state::AppState;
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -21,14 +19,14 @@ where
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(AppState::default())
+        .manage(AppState)
         .setup(|app| {
             match dotenvy::dotenv() {
                 Ok(path) => println!(">>> DOTENV LOADED FROM: {:?}", path),
                 Err(e) => println!(">>> DOTENV ERROR: {:?}", e),
             }
             setup(app)
-        })                  
+        })
         .invoke_handler(tauri::generate_handler![
             commands::system::validate_system_paths,
             commands::config_commands::get_runtime_config,
@@ -41,6 +39,7 @@ where
             commands::operation_commands::start_operation,
             commands::operation_commands::finish_operation,
             commands::operation_commands::touch_operation_lock,
+            commands::operation_commands::touch_app_instance,
             commands::monitor_commands::get_monitor_snapshot,
             commands::monitor_commands::export_operations_xml,
             commands::monitor_commands::delete_operation,
@@ -49,16 +48,6 @@ where
             commands::file_commands::open_pdf,
             commands::file_commands::get_pdf_bytes,
         ])
-        .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { .. } = event {
-                if window.label() == "main" {
-                    let state = window.state::<AppState>();
-                    let _ = tauri::async_runtime::block_on(async {
-                        OperationService::force_finish_current_operation(state.inner()).await
-                    });
-                }
-            }
-        })
         .run(tauri::generate_context!())
         .expect("erro ao iniciar aplicacao tauri");
 }

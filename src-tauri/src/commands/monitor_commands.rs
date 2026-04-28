@@ -2,7 +2,7 @@ use tauri::State;
 
 use crate::{
     db::models::MonitorSnapshot,
-    error::{AppError, ErrorResponse},
+    error::ErrorResponse,
     services::{
         config_service::ConfigService,
         local_store_service::LocalStoreService,
@@ -26,10 +26,12 @@ pub async fn export_operations_xml(
 ) -> Result<String, ErrorResponse> {
     let snapshot = MonitorService::get_snapshot(state.inner())
         .await
-        .map_err(AppError::from)?;
+        .map_err(|error| ErrorResponse {
+            message: error.to_string(),
+        })?;
 
     quick_xml::se::to_string(&snapshot)
-        .map_err(|e| ErrorResponse { message: format!("Erro ao gerar XML: {}", e) })
+        .map_err(|e| ErrorResponse { message: format!("Erro ao gerar XML: {e}") })
 }
 
 #[tauri::command]
@@ -42,15 +44,9 @@ pub async fn delete_operation(
     let expected_username = ConfigService::monitor_login_username();
     let expected_password = ConfigService::monitor_login_password();
 
-    if expected_username.is_empty() || expected_password.is_empty() {
-        return Err(ErrorResponse {
-            message: "Credenciais administrativas não configuradas.".to_string(),
-        });
-    }
-
     if username.trim() != expected_username || password != expected_password {
         return Err(ErrorResponse {
-            message: "Credenciais inválidas para exclusão.".to_string(),
+            message: "Credenciais invalidas para exclusao.".to_string(),
         });
     }
 
@@ -68,15 +64,9 @@ pub async fn delete_operations_bulk(
     let expected_username = ConfigService::monitor_login_username();
     let expected_password = ConfigService::monitor_login_password();
 
-    if expected_username.is_empty() || expected_password.is_empty() {
-        return Err(ErrorResponse {
-            message: "Credenciais administrativas não configuradas.".to_string(),
-        });
-    }
-
     if username.trim() != expected_username || password != expected_password {
         return Err(ErrorResponse {
-            message: "Credenciais inválidas para exclusão em massa.".to_string(),
+            message: "Credenciais invalidas para exclusao em massa.".to_string(),
         });
     }
 

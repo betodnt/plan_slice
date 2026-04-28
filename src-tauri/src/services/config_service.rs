@@ -20,9 +20,10 @@ struct FileConfig {
     pdf_planos_path: Option<String>,
     lock_timeout_seconds: Option<i64>,
     store_lock_stale_seconds: Option<i64>,
-    monitor_username: Option<String>,
-    monitor_password: Option<String>,
 }
+
+const DEFAULT_MONITOR_USERNAME: &str = "PCPCARDEROLI";
+const DEFAULT_MONITOR_PASSWORD: &str = "pcp2026";
 
 impl ConfigService {
     fn env_path(name: &str) -> Option<PathBuf> {
@@ -181,16 +182,6 @@ impl ConfigService {
             .and_then(|config| config.store_lock_stale_seconds)
             .unwrap_or_else(Self::store_lock_stale_seconds);
 
-        let monitor_username = file_config
-            .as_ref()
-            .and_then(|config| config.monitor_username.clone())
-            .or_else(|| env::var("MONITOR_LOGIN_USERNAME").ok());
-
-        let monitor_password = file_config
-            .as_ref()
-            .and_then(|config| config.monitor_password.clone())
-            .or_else(|| env::var("MONITOR_LOGIN_PASSWORD").ok());
-
         Ok(RuntimeConfig {
             app_env,
             machine_name,
@@ -202,8 +193,6 @@ impl ConfigService {
             pdf_planos_path,
             lock_timeout_seconds,
             store_lock_stale_seconds,
-            monitor_username,
-            monitor_password,
         })
     }
 
@@ -275,8 +264,6 @@ impl ConfigService {
             pdf_planos_path: Some(input.pdf_planos_path),
             lock_timeout_seconds: Some(input.lock_timeout_seconds),
             store_lock_stale_seconds: Some(input.store_lock_stale_seconds),
-            monitor_username: input.monitor_username,
-            monitor_password: input.monitor_password,
         })
         .map_err(|error| AppError::Internal(format!("falha ao serializar config.json: {error}")))?;
 
@@ -353,36 +340,10 @@ impl ConfigService {
     }
 
     pub fn monitor_login_username() -> String {
-        if let Ok(Some(config)) = Self::read_file_config() {
-            if let Some(user) = config.monitor_username {
-                let trimmed = user.trim();
-                if !trimmed.is_empty() {
-                    return trimmed.to_string();
-                }
-            }
-        }
-
-        env::var("MONITOR_LOGIN_USERNAME")
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-            .unwrap_or_else(|| "admin".to_string())
+        DEFAULT_MONITOR_USERNAME.to_string()
     }
 
     pub fn monitor_login_password() -> String {
-        if let Ok(Some(config)) = Self::read_file_config() {
-            if let Some(pass) = config.monitor_password {
-                let trimmed = pass.trim();
-                if !trimmed.is_empty() {
-                    return trimmed.to_string();
-                }
-            }
-        }
-
-        env::var("MONITOR_LOGIN_PASSWORD")
-            .ok()
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty())
-            .unwrap_or_else(|| "admin".to_string())
+        DEFAULT_MONITOR_PASSWORD.to_string()
     }
 }

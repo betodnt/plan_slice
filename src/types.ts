@@ -9,8 +9,6 @@ export type RuntimeConfig = {
   pdf_planos_path: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
-  monitor_username?: string | null;
-  monitor_password?: string | null;
 };
 
 export type BackendStatus = {
@@ -52,17 +50,6 @@ export type OperationSummary = {
   elapsed_seconds: number | null;
   completed_full: boolean | null;
   incomplete_reason: string | null;
-  protheus_op?: string | null;
-  protheus_status?: 'pending' | 'integrated' | 'error' | null;
-};
-
-export type ProtheusOrder = {
-  op: string;
-  product_code: string;
-  product_description: string;
-  quantity: number;
-  unit: string;
-  client?: string;
 };
 
 export type ActiveLockSummary = {
@@ -73,7 +60,16 @@ export type ActiveLockSummary = {
   heartbeat_at: string;
 };
 
+export type AppInstanceSummary = {
+  instance_id: string;
+  machine_name: string;
+  view_label: string;
+  last_seen_at: string;
+  active_operation_id: string | null;
+};
+
 export type MonitorSnapshot = {
+  app_instances: AppInstanceSummary[];
   active_operations: OperationSummary[];
   active_locks: ActiveLockSummary[];
   recent_operations: OperationSummary[];
@@ -94,7 +90,6 @@ export type StartOperationInput = {
   saida: string;
   tipo?: string;
   owner_id?: string;
-  protheus_op?: string;
 };
 
 export type StartOperationResult = {
@@ -117,6 +112,19 @@ export type FinishOperationInput = {
 };
 
 export type LockHeartbeatResult = {
+  ok: boolean;
+  message: string;
+  heartbeat_at: string;
+};
+
+export type AppInstanceHeartbeatInput = {
+  instance_id: string;
+  machine_name: string;
+  view_label: string;
+  active_operation_id?: string | null;
+};
+
+export type AppInstanceHeartbeatResult = {
   ok: boolean;
   message: string;
   heartbeat_at: string;
@@ -173,7 +181,5 @@ export type ConfigPaths = {
   pdf_planos_path: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
-  monitor_username?: string;
-  monitor_password?: string;
 };
 
