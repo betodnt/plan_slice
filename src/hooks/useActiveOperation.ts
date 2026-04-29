@@ -101,6 +101,8 @@ export function useActiveOperation({
     operatorName,
     isFinishingOperation,
     monitor?.active_operations,
+    startTimer,
+    stopTimer,
   ]);
 
   // Heartbeat management
@@ -117,7 +119,7 @@ export function useActiveOperation({
     }, 15000);
 
     return () => stopHeartbeat();
-  }, [activeOperationId]);
+  }, [activeOperationId, sendHeartbeat, stopHeartbeat, stopTimer]);
 
   return {
     activeOperationId,

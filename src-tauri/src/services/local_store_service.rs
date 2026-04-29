@@ -57,6 +57,7 @@ struct AppInstanceRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub(crate) struct StoreData {
     next_machine_id: i64,
     next_operator_id: i64,
@@ -211,11 +212,6 @@ impl LocalStoreService {
         let result = handler(&mut data)?;
         Self::save_unlocked(&data)?;
         Ok(result)
-    }
-
-    pub(crate) fn load() -> Result<StoreData, AppError> {
-        let _guard = Self::acquire_store_lock()?;
-        Self::load_unlocked()
     }
 
     pub fn ensure_store() -> Result<PathBuf, AppError> {

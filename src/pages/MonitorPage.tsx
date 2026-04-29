@@ -52,6 +52,60 @@ export default function MonitorPage() {
   const [deleteError, setDeleteError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [localStoragePath, setLocalStoragePath] = useState('');
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (runtime?.storage_path) {
+      setLocalStoragePath(runtime.storage_path);
+    }
+  }, [runtime?.storage_path]);
+
+  const handleBrowseStorage = async () => {
+    try {
+      const { open: openDialog } = await import('@tauri-apps/plugin-dialog');
+      const selected = await openDialog({
+        directory: true,
+        multiple: false,
+        title: 'Selecionar Pasta de Armazenamento',
+      });
+      if (selected && typeof selected === 'string') {
+        setLocalStoragePath(selected);
+      }
+    } catch (err) {
+      console.error('Falha ao abrir seletor:', err);
+    }
+  };
+
+  const handleSaveConfig = async () => {
+    if (!runtime || !localStoragePath) return;
+    setSavingConfig(true);
+    try {
+      await tauriClient.saveConfig({
+        machine_name: runtime.machine_name,
+        storage_path: localStoragePath,
+        app_env: runtime.app_env,
+        production_base_path: runtime.production_base_path,
+        server_path: runtime.server_path,
+        saidas_cnc_path: runtime.saidas_cnc_path,
+        saidas_cortadas_path: runtime.saidas_cortadas_path,
+        pdf_planos_path: runtime.pdf_planos_path,
+        lock_timeout_seconds: runtime.lock_timeout_seconds,
+        store_lock_stale_seconds: runtime.store_lock_stale_seconds,
+      });
+      await refresh();
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      setError(''); // Clear storage error if it was fixed
+    } catch (err: any) {
+      console.error('Falha ao salvar configuracao:', err);
+      alert(`Falha ao salvar configuração: ${err.message}`);
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   useEffect(() => {
     if (!runtime?.machine_name) return;
 
@@ -188,12 +242,15 @@ export default function MonitorPage() {
               />
             )}
 
-            {activeTab === 'operacoes' && (
+            {activeTab === 'operacoes' && (() => {
+              const corteApps = monitor?.app_instances?.filter(i => i.view_label !== 'monitor') || [];
+              
+              return (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
                   <h2 className="text-2xl font-bold text-zinc-100">Operacoes em Tempo Real</h2>
                   <p className="text-sm text-zinc-400">
-                    Maquinas atualmente em processamento no chao de fabrica. {instanceCount} instancias online monitoradas agora.
+                    Maquinas atualmente em processamento no chao de fabrica. {corteApps.length} maquinas conectadas agora.
                   </p>
                 </div>
                 <ActiveOperationsTable rows={activeRows} error={error} />
@@ -201,24 +258,20 @@ export default function MonitorPage() {
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5">
                   <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Instancias Online</h3>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        instanceCount >= 6 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'
-                      }`}
-                    >
-                      {instanceCount >= 6 ? 'CAPACIDADE OK' : `ABAIXO DE 6 (${instanceCount}/6)`}
+                    <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-300">
+                      {corteApps.length}
                     </span>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {monitor?.app_instances.length ? (
-                      monitor.app_instances.map((instance) => (
+                    {corteApps.length ? (
+                      corteApps.map((instance) => (
                         <div key={instance.instance_id} className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
                           <div className="flex items-center justify-between gap-3">
                             <div>
                               <p className="text-sm font-semibold text-zinc-100">{instance.machine_name}</p>
                               <p className="text-[11px] uppercase tracking-[0.16em] text-zinc-500">{instance.view_label}</p>
                             </div>
-                            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.45)]" />
+                            <span className={`h-2.5 w-2.5 rounded-full ${instance.active_operation_id ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.45)]' : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.3)]'}`} />
                           </div>
                           <p className="mt-3 truncate text-xs text-zinc-400">Instancia: {instance.instance_id}</p>
                           <p className="mt-1 text-xs text-zinc-500">
@@ -230,13 +283,13 @@ export default function MonitorPage() {
                       ))
                     ) : (
                       <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 text-sm text-zinc-500">
-                        Nenhuma instancia online reportada.
+                        Nenhuma maquina com operacao aberta no momento.
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-            )}
+            ); })()}
 
             {activeTab === 'relatorios' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -335,12 +388,52 @@ export default function MonitorPage() {
             )}
 
             {activeTab === 'config' && (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl border border-zinc-800 bg-zinc-900 text-zinc-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div>
+                  <h2 className="text-2xl font-bold text-zinc-100">Configuracoes do Monitor</h2>
+                  <p className="text-sm text-zinc-400">Gerencie os parametros locais de visualizacao e acesso ao backend.</p>
                 </div>
-                <h2 className="text-xl font-bold text-zinc-100">Configuracoes de PCP</h2>
-                <p className="mt-2 max-w-sm text-zinc-400">Use o atalho de configuracao no monitor principal para gerenciar os caminhos e parametros globais do sistema.</p>
+
+                <div className="max-w-xl space-y-6 rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-sm">
+                  <label className="block">
+                    <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                      Caminho de Armazenamento (.plan_slice)
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500/50"
+                        value={localStoragePath}
+                        onChange={(e) => setLocalStoragePath(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleBrowseStorage}
+                        className="flex h-[42px] w-12 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 transition-colors hover:bg-zinc-700"
+                        disabled={savingConfig}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                      </button>
+                    </div>
+                    <p className="mt-1.5 text-xs text-zinc-500">Defina o caminho de rede ou pasta local (.plan_slice) que conecta a fabrica.</p>
+                  </label>
+
+                    <button
+                      onClick={handleSaveConfig}
+                      disabled={savingConfig || !localStoragePath || localStoragePath === runtime?.storage_path}
+                      className="flex w-full items-center justify-center rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-zinc-950 transition-all hover:bg-emerald-400 disabled:opacity-50"
+                    >
+                      {savingConfig ? 'SALVANDO...' : 'SALVAR CONFIGURAÇÃO'}
+                    </button>
+
+                    {saveSuccess && (
+                      <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 py-2 text-xs font-bold text-emerald-400 animate-in fade-in zoom-in duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        CONFIGURAÇÃO SALVA COM SUCESSO
+                      </div>
+                    )}
+
+                </div>
               </div>
             )}
           </div>
@@ -361,27 +454,33 @@ export default function MonitorPage() {
             </p>
 
             <form className="mt-8 space-y-5" onSubmit={handleDeleteRow}>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Administrador</label>
-                <input
-                  type="text"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-red-500/50"
-                  value={deleteCredentials.username}
-                  onChange={(e) => setDeleteCredentials((prev) => ({ ...prev, username: e.target.value }))}
-                  required
-                  disabled={deleteLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Senha</label>
-                <input
-                  type="password"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 outline-none focus:border-red-500/50"
-                  value={deleteCredentials.password}
-                  onChange={(e) => setDeleteCredentials((prev) => ({ ...prev, password: e.target.value }))}
-                  required
-                  disabled={deleteLoading}
-                />
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">Usuario</span>
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                    value={deleteCredentials.username}
+                    onChange={(e) => setDeleteCredentials((prev) => ({ ...prev, username: e.target.value }))}
+                    required
+                    disabled={deleteLoading}
+                    autoComplete="username"
+                    placeholder="Seu usuario"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">Senha</span>
+                  <input
+                    type="password"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                    value={deleteCredentials.password}
+                    onChange={(e) => setDeleteCredentials((prev) => ({ ...prev, password: e.target.value }))}
+                    required
+                    disabled={deleteLoading}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                  />
+                </label>
               </div>
 
               {deleteError && (

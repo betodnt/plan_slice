@@ -238,13 +238,14 @@ impl OperationService {
     pub async fn force_finish_current_operation(_state: &AppState) -> Result<(), AppError> {
         let machine_name = ConfigService::machine_name();
 
-        let maybe_finish = LocalStoreService::with_data_mut(|data| {
-            let active = data.operations.iter().find(|op| {
+        let maybe_finish: Option<(String, String)> = LocalStoreService::with_data_mut(|data| {
+            let active_ops = LocalStoreService::active_operations(data);
+            let active = active_ops.into_iter().find(|op| {
                 op.status == "started" && op.machine_name == machine_name
             });
 
             if let Some(op) = active {
-                Ok(Some((op.operation_id.clone(), op.saida.clone())))
+                Ok(Some((op.operation_id, op.saida)))
             } else {
                 Ok(None)
             }

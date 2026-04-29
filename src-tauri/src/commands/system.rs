@@ -1,22 +1,7 @@
 use crate::error::ErrorResponse;
 use crate::models::PathStatus;
 use crate::services::config_service::ConfigService;
-use serde::Serialize;
 use std::fs;
-
-#[derive(Serialize)]
-pub struct RuntimeConfig {
-    pub machine_name: String,
-    pub app_env: String,
-    pub storage_path: String,
-}
-
-#[tauri::command]
-pub async fn health_check() -> Result<String, String> {
-    Ok("Sistema operacional".to_string())
-}
-
-
 
 #[tauri::command]
 pub async fn validate_system_paths() -> Result<Vec<PathStatus>, ErrorResponse> {
@@ -50,15 +35,7 @@ pub async fn validate_system_paths() -> Result<Vec<PathStatus>, ErrorResponse> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::commands::config_commands::get_runtime_config;
-
-    #[tokio::test]
-    async fn test_health_check_returns_ok() {
-        let result = health_check().await;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "Sistema operacional");
-    }
 
     #[tokio::test]
     async fn test_runtime_config_has_production_env() {

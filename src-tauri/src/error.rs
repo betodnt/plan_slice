@@ -26,12 +26,6 @@ impl From<AppError> for ErrorResponse {
     }
 }
 
-impl From<sqlx::Error> for AppError {
-    fn from(value: sqlx::Error) -> Self {
-        Self::Database(value.to_string())
-    }
-}
-
 impl From<anyhow::Error> for AppError {
     fn from(value: anyhow::Error) -> Self {
         Self::Internal(value.to_string())

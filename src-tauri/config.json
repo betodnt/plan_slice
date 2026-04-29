@@ -1,7 +1,7 @@
 {
-  "app_env": "",
+  "app_env": "development",
   "machine_name": "Bordor 1",
-  "storage_path": "V:\\8. CONTROLE DE PRODUÇÃO\\3. DADOS",
+  "storage_path": "V:\\8. CONTROLE DE PRODUÇÃO\\3. DADOS\\.plan_slice",
   "production_base_path": "V:\\",
   "server_path": "V:\\8. CONTROLE DE PRODUÇÃO\\1. SAÍDAS A CORTAR",
   "saidas_cnc_path": "V:\\8. CONTROLE DE PRODUÇÃO\\1. SAÍDAS A CORTAR",

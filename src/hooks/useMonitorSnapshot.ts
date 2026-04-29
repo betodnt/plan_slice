@@ -32,35 +32,10 @@ export function useMonitorSnapshot() {
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const guardedLoadMonitor = async () => {
-      try {
-        const [snapshot, runtimeValue] = await Promise.all([
-          tauriClient.getMonitorSnapshot(),
-          tauriClient.getRuntimeConfig(),
-        ]);
-
-        if (!isMounted) return;
-
-        startTransition(() => {
-          setMonitor(snapshot);
-          setRuntime(runtimeValue);
-          setError('');
-        });
-      } catch (loadError) {
-        if (!isMounted) return;
-
-        startTransition(() => {
-          setError(getErrorMessage(loadError));
-        });
-      }
-    };
-
-    void guardedLoadMonitor();
+    void loadMonitor();
 
     const monitorInterval = window.setInterval(() => {
-      void guardedLoadMonitor();
+      void loadMonitor();
     }, 3000);
 
     const clockInterval = window.setInterval(() => {
@@ -68,11 +43,10 @@ export function useMonitorSnapshot() {
     }, 1000);
 
     return () => {
-      isMounted = false;
       window.clearInterval(monitorInterval);
       window.clearInterval(clockInterval);
     };
-  }, []);
+  }, [loadMonitor]);
 
   const activeRows = useMemo(() => {
     if (!monitor?.active_operations) return [];
@@ -155,7 +129,7 @@ export function useMonitorSnapshot() {
     setFilterType,
     refresh: loadMonitor,
     activeCount: activeRows.length,
-    instanceCount: monitor?.app_instances?.length || 0,
+    instanceCount: monitor?.app_instances?.filter(i => i.view_label !== 'monitor').length || 0,
     historyCount: historyRows.length,
     totalTodayCount,
     totalHistoryCount: monitor?.recent_operations?.length || 0,
