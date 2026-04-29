@@ -1,4 +1,4 @@
-import { FormEvent, RefObject, useEffect } from 'react';
+import { FormEvent, RefObject, useEffect, useState } from 'react';
 import type { FinishDialogState } from '../../types';
 
 type FinishOperationModalProps = {
@@ -8,7 +8,7 @@ type FinishOperationModalProps = {
   finishReasonRef: RefObject<HTMLTextAreaElement | null>;
   onClose: () => void;
   onChange: (patch: Partial<FinishDialogState>) => void;
-  onSubmit: (event?: FormEvent) => void | Promise<void>;
+  onSubmit: (event?: FormEvent, directCompletedFull?: boolean) => void | Promise<void>;
 };
 
 const choiceButtonBaseClass =
@@ -32,8 +32,13 @@ export function FinishOperationModal({
   onChange,
   onSubmit,
 }: FinishOperationModalProps) {
+  const [showReason, setShowReason] = useState(false);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setShowReason(false);
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !loading) onClose();
     };
@@ -42,6 +47,18 @@ export function FinishOperationModal({
   }, [open, loading, onClose]);
 
   if (!open) return null;
+
+  const handleSim = () => {
+    onChange({ completedFull: true, incompleteReason: '' });
+    // Usamos um timeout pequeno para garantir que o onChange processe (embora no React 18+ batching deva funcionar)
+    // Ou passamos diretamente para o onSubmit
+    onSubmit(undefined, true);
+  };
+
+  const handleNao = () => {
+    onChange({ completedFull: false });
+    setShowReason(true);
+  };
 
   return (
     <div
@@ -62,90 +79,71 @@ export function FinishOperationModal({
         <h3 id="finish-operation-modal-title" className="text-xl font-semibold text-zinc-100">
           O plano foi cortado completo?
         </h3>
-        <p className="mt-2 text-sm text-zinc-400">
-          Confirme o status da operacao antes de concluir o registro.
-        </p>
 
-        <form className="mt-6 space-y-5" onSubmit={onSubmit}>
-          <div className="grid grid-cols-2 gap-3">
+        {!showReason ? (
+          <div className="mt-8 flex flex-col gap-3">
             <button
               type="button"
-              className={`${choiceButtonBaseClass} ${
-                finishDialog.completedFull
-                  ? 'border-emerald-500 bg-emerald-500 text-zinc-950'
-                  : 'border-zinc-800 bg-zinc-950 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800'
-              }`}
-              onClick={() =>
-                onChange({
-                  completedFull: true,
-                  incompleteReason: '',
-                })
-              }
+              className={`${choiceButtonBaseClass} border-emerald-500 bg-emerald-500 text-zinc-950 h-14 text-lg`}
+              onClick={handleSim}
               disabled={loading}
-              aria-pressed={finishDialog.completedFull}
             >
-              SIM
+              SIM, FOI CORTADO INTEIRO
             </button>
             <button
               type="button"
-              className={`${choiceButtonBaseClass} ${
-                !finishDialog.completedFull
-                  ? 'border-amber-500 bg-amber-500 text-zinc-950'
-                  : 'border-zinc-800 bg-zinc-950 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800'
-              }`}
-              onClick={() =>
-                onChange({
-                  completedFull: false,
-                })
-              }
+              className={`${choiceButtonBaseClass} border-zinc-800 bg-zinc-950 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800 h-14 text-lg`}
+              onClick={handleNao}
               disabled={loading}
-              aria-pressed={!finishDialog.completedFull}
             >
               NAO
             </button>
+            <button
+              type="button"
+              className="mt-2 text-sm text-zinc-500 hover:text-zinc-300 underline underline-offset-4"
+              onClick={onClose}
+              disabled={loading}
+            >
+              CANCELAR
+            </button>
           </div>
-
-          <div className="space-y-4">
-            {!finishDialog.completedFull ? (
-              <label className="block space-y-2">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  Por que?
-                </span>
-                <textarea
-                  ref={finishReasonRef}
-                  className={`${fieldClass} min-h-28 resize-y`}
-                  value={finishDialog.incompleteReason}
-                  onChange={(event) =>
-                    onChange({
-                      incompleteReason: event.target.value,
-                    })
-                  }
-                  disabled={loading}
-                  placeholder="Descreva o motivo"
-                  required
-                />
-              </label>
-            ) : (
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-sm text-zinc-400">
-                Confirmar como plano completo finaliza a operacao e libera a saida para o proximo app.
-              </div>
-            )}
+        ) : (
+          <form className="mt-6 space-y-5" onSubmit={onSubmit}>
+            <label className="block space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                Qual o motivo do plano nao ter sido cortado completo?
+              </span>
+              <textarea
+                ref={finishReasonRef}
+                className={`${fieldClass} min-h-32 resize-y`}
+                value={finishDialog.incompleteReason}
+                onChange={(event) =>
+                  onChange({
+                    incompleteReason: event.target.value,
+                  })
+                }
+                disabled={loading}
+                placeholder="Descreva o motivo"
+                required
+                autoFocus
+              />
+            </label>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
                 className={secondaryButtonClass}
-                onClick={onClose}
+                onClick={() => setShowReason(false)}
                 disabled={loading}
               >
-                CANCELAR
+                VOLTAR
               </button>
               <button type="submit" className={primaryButtonClass} disabled={loading}>
                 {loading ? 'CONFIRMANDO...' : 'CONFIRMAR'}
               </button>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
       </section>
     </div>
   );

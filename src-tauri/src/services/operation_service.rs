@@ -107,16 +107,18 @@ impl OperationService {
         if input.operation_id.trim().is_empty() {
             return Err(AppError::Config("operation_id e obrigatorio".to_string()));
         }
-        if !input.completed_full
-            && input
-                .incomplete_reason
-                .as_deref()
-                .map(|value| value.trim().is_empty())
-                .unwrap_or(true)
-        {
-            return Err(AppError::Config(
-                "informe o motivo quando o plano nao for cortado completo".to_string(),
-            ));
+        if !input.completed_full {
+            let reason = input.incomplete_reason.as_deref().unwrap_or("");
+            if reason.trim().is_empty() {
+                return Err(AppError::Config(
+                    "informe o motivo quando o plano nao for cortado completo".to_string(),
+                ));
+            }
+            if reason.len() > 500 {
+                return Err(AppError::Config(
+                    "motivo muito longo (max 500 caracteres)".to_string(),
+                ));
+            }
         }
 
         let owner_id = format!("desktop:rollback:{}", input.operation_id.trim());
@@ -231,6 +233,52 @@ impl OperationService {
             operators: LocalStoreService::operators(&data),
             generated_at: Utc::now(),
         })
+    }
+
+    pub async fn force_finish_current_operation(_state: &AppState) -> Result<(), AppError> {
+        let machine_name = ConfigService::machine_name();
+
+        let maybe_finish = LocalStoreService::with_data_mut(|data| {
+            let active = data.operations.iter().find(|op| {
+                op.status == "started" && op.machine_name == machine_name
+            });
+
+            if let Some(op) = active {
+                Ok(Some((op.operation_id.clone(), op.saida.clone())))
+            } else {
+                Ok(None)
+            }
+        })?;
+
+        if let Some((operation_id, saida)) = maybe_finish {
+            println!(">>> Finalizando operacao ativa automaticamente ao fechar: {} ({})", operation_id, saida);
+
+            let incomplete_reason = "Finalizado automaticamente ao fechar o aplicativo";
+
+            let (op_id, _, _) = LocalStoreService::with_data_mut(|data| {
+                LocalStoreService::finish_operation(
+                    data,
+                    &operation_id,
+                    false,
+                    Some(incomplete_reason),
+                )
+            })?;
+
+            // Tenta mover o arquivo para parcial se possivel
+            if let Ok(src_file) = resolve_finish_source_file(&saida) {
+                let server_path = ConfigService::server_path()?;
+                let partial_name = FileService::build_partial_filename(&saida);
+                let dst_file = FileService::unique_destination_path(Path::new(&server_path), &partial_name);
+
+                if src_file != dst_file {
+                    let _ = FileService::move_file(&src_file, &dst_file);
+                }
+            }
+
+            println!(">>> Operacao {} finalizada como parcial.", op_id);
+        }
+
+        Ok(())
     }
 }
 
