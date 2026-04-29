@@ -187,15 +187,18 @@ impl LocalStoreService {
         let content = serde_json::to_string_pretty(data)
             .map_err(|error| AppError::Internal(format!("Falha ao salvar o armazenamento: {error}")))?;
 
+        // Escrita atômica garantida por fs::rename
         fs::write(&temp_path, content)?;
 
         if store_path.exists() {
-            // Cria backup antes de sobrescrever
+            // Tenta criar backup, mas não falha se não conseguir
             let _ = fs::copy(&store_path, &bak_path);
-            fs::remove_file(&store_path)?;
         }
 
-        fs::rename(temp_path, store_path)?;
+        // fs::rename é atômico na maioria dos sistemas de arquivos modernos
+        fs::rename(temp_path, store_path).map_err(|e| {
+            AppError::Io(format!("Erro ao finalizar salvamento do store: {}", e))
+        })?;
         Ok(())
     }
 

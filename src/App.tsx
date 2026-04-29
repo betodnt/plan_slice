@@ -389,22 +389,28 @@ function MainApp() {
         setActiveOperationId(result.operation_id);
         showFeedback('Corte iniciado com sucesso.');
         startTimer();
-        await handleRefreshMonitor();
-        await handleLoadBootstrapData();
+        await Promise.all([
+          handleRefreshMonitor(),
+          handleLoadBootstrapData()
+        ]);
       } catch (error) {
         showFeedback(getErrorMessage(error));
       } finally {
         setLoading(false);
       }
     },
-    [form, handleLoadBootstrapData, handleRefreshMonitor, setActiveOperationId, showFeedback, startTimer]
+    [form, handleLoadBootstrapData, handleRefreshMonitor, runtime?.machine_name, setActiveOperationId, showFeedback, startTimer]
   );
 
   const handleFinishOperation = useCallback(
-    async (event?: FormEvent) => {
+    async (event?: FormEvent, directCompletedFull?: boolean) => {
       if (event) event.preventDefault();
       if (!activeOperationId) return;
-      if (!finishDialog.completedFull && !finishDialog.incompleteReason.trim()) {
+
+      const isCompletedFull = directCompletedFull ?? finishDialog.completedFull;
+      const reason = directCompletedFull ? null : finishDialog.incompleteReason.trim();
+
+      if (!isCompletedFull && !reason) {
         showFeedback('Informe o motivo quando o plano nao for cortado completo.');
         window.setTimeout(() => finishReasonRef.current?.focus(), 50);
         return;
@@ -414,8 +420,8 @@ function MainApp() {
       const currentSaida = form.saida;
       const finishPayload: FinishOperationInput = {
         operation_id: operationIdToFinish,
-        completed_full: finishDialog.completedFull,
-        incomplete_reason: finishDialog.completedFull ? null : finishDialog.incompleteReason.trim(),
+        completed_full: isCompletedFull,
+        incomplete_reason: reason,
       };
 
       setLoading(true);

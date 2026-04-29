@@ -5,6 +5,8 @@ pub mod models;
 pub mod services;
 pub mod state;
 
+use tauri::{Manager, WindowEvent};
+use crate::services::operation_service::OperationService;
 use crate::state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -20,6 +22,17 @@ where
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState)
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { .. } = event {
+                if window.label() == "main" {
+                    let app_handle = window.app_handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        let state = app_handle.state::<AppState>();
+                        let _ = OperationService::force_finish_current_operation(state.inner()).await;
+                    });
+                }
+            }
+        })
         .setup(|app| {
             match dotenvy::dotenv() {
                 Ok(path) => println!(">>> DOTENV LOADED FROM: {:?}", path),
