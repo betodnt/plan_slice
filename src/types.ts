@@ -7,6 +7,7 @@ export type RuntimeConfig = {
   saidas_cnc_path: string;
   saidas_cortadas_path: string;
   pdf_planos_path: string;
+  lock_dir: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
 };
@@ -179,7 +180,7 @@ export type ConfigPaths = {
   saidas_cnc_path: string;
   saidas_cortadas_path: string;
   pdf_planos_path: string;
+  lock_dir: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
 };
-

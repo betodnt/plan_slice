@@ -13,6 +13,7 @@ type ControlPanelProps = {
   storageOk: boolean;
   timerString: string;
   loading: boolean;
+  isSubmitting?: boolean;
   activeOperationId: string;
   onSubmit: (event?: FormEvent) => void | Promise<void>;
   onFormChange: (patch: Partial<StartOperationInput>) => void;
@@ -41,6 +42,7 @@ export function ControlPanel({
   storageOk,
   timerString,
   loading,
+  isSubmitting,
   activeOperationId,
   onSubmit,
   onFormChange,
@@ -250,17 +252,27 @@ export function ControlPanel({
                 <button
                   type="submit"
                   className={`${buttonBaseClass} h-11 min-w-[7rem] border border-emerald-500 bg-emerald-500 text-zinc-950 hover:border-emerald-400 hover:bg-emerald-400`}
-                  disabled={loading || activeOperationId !== ''}
+                  disabled={loading || isSubmitting || activeOperationId !== ''}
                 >
-                  Iniciar
+                  {isSubmitting && activeOperationId === '' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-950/20 border-t-zinc-950" />
+                      <span>Processando...</span>
+                    </div>
+                  ) : 'Iniciar'}
                 </button>
                 <button
                   type="button"
                   className={`${buttonBaseClass} h-11 min-w-[7rem] border border-zinc-700 bg-zinc-800 text-zinc-100 hover:border-zinc-600 hover:bg-zinc-700`}
-                  disabled={activeOperationId === '' || loading}
+                  disabled={activeOperationId === '' || loading || isSubmitting}
                   onClick={onOpenFinishDialog}
                 >
-                  Finalizar
+                  {isSubmitting && activeOperationId !== '' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-100/20 border-t-zinc-100" />
+                      <span>Processando...</span>
+                    </div>
+                  ) : 'Finalizar'}
                 </button>
               </div>
             </div>

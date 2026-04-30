@@ -11,6 +11,7 @@ pub struct RuntimeConfig {
     pub saidas_cnc_path: String,
     pub saidas_cortadas_path: String,
     pub pdf_planos_path: String,
+    pub lock_dir: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
 }
@@ -25,6 +26,7 @@ pub struct SaveConfigInput {
     pub saidas_cnc_path: String,
     pub saidas_cortadas_path: String,
     pub pdf_planos_path: String,
+    pub lock_dir: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
 }

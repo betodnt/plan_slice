@@ -18,6 +18,7 @@ struct FileConfig {
     saidas_cnc_path: Option<String>,
     saidas_cortadas_path: Option<String>,
     pdf_planos_path: Option<String>,
+    lock_dir: Option<String>,
     lock_timeout_seconds: Option<i64>,
     store_lock_stale_seconds: Option<i64>,
 }
@@ -172,6 +173,11 @@ impl ConfigService {
             .and_then(|config| config.pdf_planos_path.clone())
             .unwrap_or_else(|| Self::pdf_planos_path().unwrap_or_default());
 
+        let lock_dir = file_config
+            .as_ref()
+            .and_then(|config| config.lock_dir.clone())
+            .unwrap_or_else(|| Self::lock_dir_path().unwrap_or_default().to_string_lossy().to_string());
+
         let lock_timeout_seconds = file_config
             .as_ref()
             .and_then(|config| config.lock_timeout_seconds)
@@ -191,6 +197,7 @@ impl ConfigService {
             saidas_cnc_path,
             saidas_cortadas_path,
             pdf_planos_path,
+            lock_dir,
             lock_timeout_seconds,
             store_lock_stale_seconds,
         })
@@ -217,6 +224,15 @@ impl ConfigService {
         }
 
         Ok(Self::dados_default_path().join(".plan_slice"))
+    }
+
+    pub fn lock_dir_path() -> Result<PathBuf, AppError> {
+        let file_config = Self::read_file_config()?;
+        if let Some(path) = file_config.and_then(|c| c.lock_dir) {
+            return Ok(PathBuf::from(path));
+        }
+
+        Ok(Self::production_base_path().join(".locks"))
     }
 
     pub fn storage_dir_path() -> Result<PathBuf, AppError> {
@@ -262,6 +278,7 @@ impl ConfigService {
             saidas_cnc_path: Some(input.saidas_cnc_path),
             saidas_cortadas_path: Some(input.saidas_cortadas_path),
             pdf_planos_path: Some(input.pdf_planos_path),
+            lock_dir: Some(input.lock_dir),
             lock_timeout_seconds: Some(input.lock_timeout_seconds),
             store_lock_stale_seconds: Some(input.store_lock_stale_seconds),
         })

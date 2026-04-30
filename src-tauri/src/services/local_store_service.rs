@@ -300,9 +300,11 @@ impl LocalStoreService {
         Self::ensure_machine(data, maquina);
         Self::ensure_operator(data, operador);
 
+        // O lock de saída agora é secundário ao lock de máquina distribuído,
+        // mas mantemos para evitar conflitos na mesma máquina se houver múltiplas saídas.
         if data.locks.iter().any(|lock| lock.saida == saida) {
             return Err(AppError::Config(
-                "Esta saída já está em uso por outro operador.".to_string(),
+                "Esta saída já está em uso.".to_string(),
             ));
         }
 

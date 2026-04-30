@@ -3,7 +3,7 @@ import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { ControlPanel } from './components/main/ControlPanel';
 import { FinishOperationModal } from './components/main/FinishOperationModal';
 import { HistoryPanel } from './components/main/HistoryPanel';
-import { MonitorAccessModal } from './components/main/MonitorAccessModal';
+import { LoginModal } from './components/common/LoginModal';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useActiveOperation } from './hooks/useActiveOperation';
 import { getErrorMessage } from './lib/errors';
@@ -61,6 +61,7 @@ function MainApp() {
   const [pdfTotalPages, setPdfTotalPages] = useState<number>(0);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishingOperation, setIsFinishingOperation] = useState(false);
   const [dateFilter, setDateFilter] = useState(() => getLocalDateKey());
   const [showFinishDialog, setShowFinishDialog] = useState(false);
@@ -85,6 +86,7 @@ function MainApp() {
     saidas_cnc_path: '',
     saidas_cortadas_path: '',
     pdf_planos_path: '',
+    lock_dir: '',
     lock_timeout_seconds: 14400,
     store_lock_stale_seconds: 30,
   });
@@ -116,6 +118,7 @@ function MainApp() {
   }, []);
 
   const handleLoadBootstrapData = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await tauriClient.getBootstrapData();
       setBootstrapData(data);
@@ -146,6 +149,8 @@ function MainApp() {
       await handleRefreshMonitor();
     } catch (error) {
       showFeedback(getErrorMessage(error));
+    } finally {
+      setLoading(false);
     }
   }, [handleLoadBootstrapData, handleRefreshMonitor, showFeedback]);
 
@@ -207,18 +212,23 @@ function MainApp() {
   }, [form.saida]);
 
   useEffect(() => {
-    void loadInitialState();
+    let timeoutId: number;
 
-    const monitorInterval = window.setInterval(() => {
-      void handleRefreshMonitor();
-    }, 3000);
+    const poll = async () => {
+      await handleRefreshMonitor();
+      timeoutId = window.setTimeout(poll, 3000);
+    };
+
+    void loadInitialState().then(() => {
+      void poll();
+    });
 
     return () => {
       stopTimer();
       if (feedbackTimer.current !== null) {
         window.clearTimeout(feedbackTimer.current);
       }
-      window.clearInterval(monitorInterval);
+      window.clearTimeout(timeoutId);
     };
   }, [handleRefreshMonitor, loadInitialState, stopTimer]);
 
@@ -292,6 +302,7 @@ function MainApp() {
         saidas_cnc_path: runtime.saidas_cnc_path || '',
         saidas_cortadas_path: runtime.saidas_cortadas_path || '',
         pdf_planos_path: runtime.pdf_planos_path || '',
+        lock_dir: runtime.lock_dir || '',
         lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
         store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
       });
@@ -328,7 +339,7 @@ function MainApp() {
 
   const handleSearchCnc = useCallback(async () => {
     if (!form.pedido || !form.tipo) return;
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
       const result = await tauriClient.searchCncFiles({
@@ -353,7 +364,7 @@ function MainApp() {
       setAvailableSaidas([]);
       setForm((prev) => ({ ...prev, saida: '' }));
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   }, [form.pedido, form.tipo, monitor?.active_locks, showFeedback]);
 
@@ -378,7 +389,7 @@ function MainApp() {
         return;
       }
 
-      setLoading(true);
+      setIsSubmitting(true);
 
       try {
         const result = await tauriClient.startOperation({
@@ -396,7 +407,7 @@ function MainApp() {
       } catch (error) {
         showFeedback(getErrorMessage(error));
       } finally {
-        setLoading(false);
+        setIsSubmitting(false);
       }
     },
     [form, handleLoadBootstrapData, handleRefreshMonitor, runtime?.machine_name, setActiveOperationId, showFeedback, startTimer]
@@ -424,7 +435,7 @@ function MainApp() {
         incomplete_reason: reason,
       };
 
-      setLoading(true);
+      setIsSubmitting(true);
       setIsFinishingOperation(true);
       setShowFinishDialog(false);
       stopTimer();
@@ -450,7 +461,7 @@ function MainApp() {
         showFeedback(getErrorMessage(error));
       } finally {
         setIsFinishingOperation(false);
-        setLoading(false);
+        setIsSubmitting(false);
       }
     },
     [
@@ -508,6 +519,7 @@ function MainApp() {
         saidas_cnc_path: configPaths.saidas_cnc_path,
         saidas_cortadas_path: configPaths.saidas_cortadas_path,
         pdf_planos_path: configPaths.pdf_planos_path,
+        lock_dir: configPaths.lock_dir,
         lock_timeout_seconds: configPaths.lock_timeout_seconds,
         store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
       });
@@ -567,6 +579,7 @@ function MainApp() {
           timerString={timerString}
           loading={loading}
           activeOperationId={activeOperationId}
+          isSubmitting={isSubmitting}
           onSubmit={handleStartOperation}
           onFormChange={handleFormChange}
           onOpenMonitorLogin={openMonitorLogin}
@@ -587,7 +600,7 @@ function MainApp() {
 
       <FinishOperationModal
         open={showFinishDialog}
-        loading={loading}
+        loading={isSubmitting}
         finishDialog={finishDialog}
         finishReasonRef={finishReasonRef}
         onClose={closeFinishDialog}
@@ -595,7 +608,7 @@ function MainApp() {
         onSubmit={handleFinishOperation}
       />
 
-      <MonitorAccessModal
+      <LoginModal
         open={showMonitorLogin}
         onClose={closeMonitorLogin}
         isAdminAuthenticated={isAdminAuthenticated}
