@@ -5,8 +5,12 @@ pub mod models;
 pub mod services;
 pub mod state;
 
+use std::sync::Arc;
 use tauri::{Manager, WindowEvent};
+use uuid::Uuid;
 use crate::services::operation_service::OperationService;
+use crate::services::config_service::ConfigService;
+use crate::services::distributed_lock::DistributedLock;
 use crate::state::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -18,10 +22,19 @@ pub fn run_with_setup<F>(setup: F)
 where
     F: FnOnce(&mut tauri::App) -> Result<(), Box<dyn std::error::Error>> + Send + 'static,
 {
+    let instance_id = Uuid::new_v4().to_string();
+    let lock_dir = ConfigService::lock_dir_path().unwrap_or_else(|_| {
+        std::path::PathBuf::from("V:\\8. CONTROLE DE PRODU\u{00C7}\u{00C3}O\\.locks")
+    });
+    let lock = Arc::new(DistributedLock::new(lock_dir, instance_id.clone(), 45));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(AppState)
+        .manage(AppState {
+            instance_id,
+            lock,
+        })
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { .. } = event {
                 if window.label() == "main" {

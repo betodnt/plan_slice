@@ -8,11 +8,13 @@ export function useMonitorSnapshot() {
   const [monitor, setMonitor] = useState<MonitorSnapshot | null>(null);
   const [runtime, setRuntime] = useState<RuntimeConfig | null>(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [dateFilter, setDateFilter] = useState(() => getLocalDateKey());
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month'>('day');
 
   const loadMonitor = useCallback(async () => {
+    setLoading(true);
     try {
       const [snapshot, runtimeValue] = await Promise.all([
         tauriClient.getMonitorSnapshot(),
@@ -28,22 +30,27 @@ export function useMonitorSnapshot() {
       startTransition(() => {
         setError(getErrorMessage(loadError));
       });
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadMonitor();
+    let timeoutId: number;
 
-    const monitorInterval = window.setInterval(() => {
-      void loadMonitor();
-    }, 3000);
+    const poll = async () => {
+      await loadMonitor();
+      timeoutId = window.setTimeout(poll, 3000);
+    };
+
+    void poll();
 
     const clockInterval = window.setInterval(() => {
       setNow(Date.now());
     }, 1000);
 
     return () => {
-      window.clearInterval(monitorInterval);
+      window.clearTimeout(timeoutId);
       window.clearInterval(clockInterval);
     };
   }, [loadMonitor]);
@@ -127,6 +134,7 @@ export function useMonitorSnapshot() {
     setDateFilter,
     filterType,
     setFilterType,
+    loading,
     refresh: loadMonitor,
     activeCount: activeRows.length,
     instanceCount: monitor?.app_instances?.filter(i => i.view_label !== 'monitor').length || 0,

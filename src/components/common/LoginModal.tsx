@@ -2,7 +2,7 @@ import { FormEvent, RefObject, useEffect, useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { ConfigPaths, MonitorLoginForm } from '../../types';
 
-type MonitorAccessModalProps = {
+type LoginModalProps = {
   open: boolean;
   onClose: () => void;
   isAdminAuthenticated: boolean;
@@ -16,6 +16,8 @@ type MonitorAccessModalProps = {
   onConfigPathsChange: (patch: Partial<ConfigPaths>) => void;
   onSaveConfig: () => void | Promise<void>;
   loading: boolean;
+  title?: string;
+  subtitle?: string;
 };
 
 const inputClass =
@@ -31,7 +33,7 @@ const labelSpanClass = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[0
 
 type TabType = 'caminhos' | 'avancado';
 
-export function MonitorAccessModal({
+export function LoginModal({
   open,
   onClose,
   isAdminAuthenticated,
@@ -45,7 +47,9 @@ export function MonitorAccessModal({
   onConfigPathsChange,
   onSaveConfig,
   loading,
-}: MonitorAccessModalProps) {
+  title = 'Configuracoes',
+  subtitle = 'Gerencie os parametros e caminhos do sistema.',
+}: LoginModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('caminhos');
 
   const handleBrowse = async (key: keyof ConfigPaths) => {
@@ -85,7 +89,7 @@ export function MonitorAccessModal({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="monitor-access-modal-title"
+        aria-labelledby="login-modal-title"
       >
         {!isAdminAuthenticated ? (
           <div className="p-8">
@@ -93,7 +97,7 @@ export function MonitorAccessModal({
               <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.25em] text-emerald-500">
                 Acesso Restrito
               </p>
-              <h3 id="monitor-access-modal-title" className="text-2xl font-bold text-zinc-100">
+              <h3 id="login-modal-title" className="text-2xl font-bold text-zinc-100">
                 Login Administrativo
               </h3>
               <p className="mt-2 text-sm text-zinc-400">
@@ -182,11 +186,11 @@ export function MonitorAccessModal({
             <div className="border-b border-zinc-800 bg-zinc-900/50 p-6 pb-0">
               <div className="mb-6 flex items-center justify-between">
                 <div>
-                  <h3 id="monitor-access-modal-title" className="text-2xl font-bold text-zinc-100">
-                    Configuracoes
+                  <h3 id="login-modal-title" className="text-2xl font-bold text-zinc-100">
+                    {title}
                   </h3>
                   <p className="mt-1 text-sm text-zinc-400">
-                    Gerencie os parametros e caminhos do sistema.
+                    {subtitle}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-1">

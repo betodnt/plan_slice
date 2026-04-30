@@ -15,6 +15,9 @@ use crate::{
     state::AppState,
 };
 use std::path::{Path, PathBuf};
+use std::time::Duration;
+use tokio::time::timeout;
+use tokio::task::spawn_blocking;
 
 pub struct OperationService;
 
@@ -58,18 +61,23 @@ impl OperationService {
     }
 
     pub async fn start_operation(
-        _state: &AppState,
+        state: &AppState,
         input: StartOperationInput,
     ) -> Result<StartOperationResult, AppError> {
         validate_start_input(&input)?;
+
+        // Tenta adquirir o lock distribuído para a máquina
+        if !state.lock.try_acquire(input.maquina.trim()).map_err(|e| AppError::Internal(e))? {
+            return Err(AppError::Config(format!("Máquina {} em uso por outra estação", input.maquina.trim())));
+        }
 
         let owner_id = input
             .owner_id
             .clone()
             .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| format!("desktop:{}", input.maquina.trim()));
+            .unwrap_or_else(|| state.instance_id.clone());
 
-        let operation_id = LocalStoreService::with_data_mut(|data| {
+        let operation_id = match LocalStoreService::with_data_mut(|data| {
             LocalStoreService::start_operation(
                 data,
                 input.pedido.trim(),
@@ -80,16 +88,35 @@ impl OperationService {
                 input.tipo.as_deref(),
                 &owner_id,
             )
-        })?;
+        }) {
+            Ok(id) => id,
+            Err(e) => {
+                let _ = state.lock.release(input.maquina.trim());
+                return Err(e);
+            }
+        };
 
         let local_path = ConfigService::saidas_cnc_path()?;
-        let src_file = resolve_source_file(input.saida.trim())?;
-        let dst_file = Path::new(&local_path).join(input.saida.trim());
+        let saida = input.saida.trim().to_string();
 
-        if let Err(error) = FileService::copy_file(&src_file, &dst_file) {
+        let file_op_result = timeout(
+            Duration::from_secs(5),
+            spawn_blocking(move || -> Result<(), AppError> {
+                let src_file = resolve_source_file(&saida)?;
+                let dst_file = Path::new(&local_path).join(&saida);
+                FileService::copy_file(&src_file, &dst_file)?;
+                Ok(())
+            })
+        )
+        .await
+        .map_err(|_| AppError::Io("Tempo limite de rede excedido".to_string()))?
+        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))?;
+
+        if let Err(error) = file_op_result {
             let _ = LocalStoreService::with_data_mut(|data| {
                 LocalStoreService::rollback_start_operation(data, &operation_id)
             });
+            let _ = state.lock.release(input.maquina.trim());
             return Err(error);
         }
 
@@ -101,7 +128,7 @@ impl OperationService {
     }
 
     pub async fn finish_operation(
-        _state: &AppState,
+        state: &AppState,
         input: FinishOperationInput,
     ) -> Result<FinishOperationResult, AppError> {
         if input.operation_id.trim().is_empty() {
@@ -122,32 +149,59 @@ impl OperationService {
         }
 
         let owner_id = format!("desktop:rollback:{}", input.operation_id.trim());
-        let (operation_id, elapsed_seconds, saida) = LocalStoreService::with_data_mut(|data| {
-            LocalStoreService::finish_operation(
+        let (operation_id, elapsed_seconds, saida, machine_name) = LocalStoreService::with_data_mut(|data| {
+            let (op_id, elapsed, saida) = LocalStoreService::finish_operation(
                 data,
                 input.operation_id.trim(),
                 input.completed_full,
                 input.incomplete_reason.as_deref().map(str::trim),
-            )
+            )?;
+
+            // Busca o nome da máquina para liberar o lock
+            let machine = data.operations.iter()
+                .find(|o| o.operation_id == op_id)
+                .map(|o| o.machine_name.clone())
+                .unwrap_or_default();
+
+            Ok((op_id, elapsed, saida, machine))
         })?;
 
-        let src_file = resolve_finish_source_file(&saida)?;
-        let dst_file = if input.completed_full {
-            let cortadas_path = ConfigService::saidas_cortadas_path()?;
-            Path::new(&cortadas_path).join(&saida)
-        } else {
-            let server_path = ConfigService::server_path()?;
-            let partial_name = FileService::build_partial_filename(&saida);
-            FileService::unique_destination_path(Path::new(&server_path), &partial_name)
-        };
+        let completed_full = input.completed_full;
+        let saida_clone = saida.clone();
 
-        if src_file != dst_file {
-            if let Err(error) = FileService::move_file(&src_file, &dst_file) {
-                let _ = LocalStoreService::with_data_mut(|data| {
-                    LocalStoreService::rollback_finish_operation(data, &operation_id, &owner_id)
-                });
-                return Err(error);
-            }
+        let file_op_result = timeout(
+            Duration::from_secs(5),
+            spawn_blocking(move || -> Result<(), AppError> {
+                let src_file = resolve_finish_source_file(&saida_clone)?;
+                let dst_file = if completed_full {
+                    let cortadas_path = ConfigService::saidas_cortadas_path()?;
+                    Path::new(&cortadas_path).join(&saida_clone)
+                } else {
+                    let server_path = ConfigService::server_path()?;
+                    let partial_name = FileService::build_partial_filename(&saida_clone);
+                    FileService::unique_destination_path(Path::new(&server_path), &partial_name)
+                };
+
+                if src_file != dst_file {
+                    FileService::move_file(&src_file, &dst_file)?;
+                }
+                Ok(())
+            })
+        )
+        .await
+        .map_err(|_| AppError::Io("Tempo limite de rede excedido".to_string()))?
+        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))?;
+
+        if let Err(error) = file_op_result {
+            let _ = LocalStoreService::with_data_mut(|data| {
+                LocalStoreService::rollback_finish_operation(data, &operation_id, &owner_id)
+            });
+            return Err(error);
+        }
+
+        // Libera o lock distribuído somente após concluir as operações de arquivo
+        if !machine_name.is_empty() {
+            let _ = state.lock.release(&machine_name);
         }
 
         Ok(FinishOperationResult {
@@ -169,16 +223,44 @@ impl OperationService {
     }
 
     pub async fn touch_lock(
-        _state: &AppState,
+        state: &AppState,
         input: LockHeartbeatInput,
     ) -> Result<LockHeartbeatResult, AppError> {
         if input.operation_id.trim().is_empty() {
             return Err(AppError::Config("operation_id e obrigatorio".to_string()));
         }
 
-        let touched = LocalStoreService::with_data_mut(|data| {
-            Ok(LocalStoreService::touch_lock(data, input.operation_id.trim()))
-        })?;
+        let operation_id = input.operation_id.trim().to_string();
+        let lock_clone = state.lock.clone();
+
+        let (touched, machine_name) = timeout(
+            Duration::from_secs(5),
+            spawn_blocking(move || {
+                LocalStoreService::with_data_mut(|data| {
+                    let touched = LocalStoreService::touch_lock(data, &operation_id);
+                    let machine = if touched {
+                        data.locks.iter()
+                            .find(|l| l.operation_id == operation_id)
+                            .map(|l| l.machine_name.clone())
+                    } else {
+                        None
+                    };
+                    Ok((touched, machine))
+                })
+            })
+        )
+        .await
+        .map_err(|_| AppError::Io("Tempo limite de rede excedido no heartbeat".to_string()))?
+        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))??;
+
+        if let Some(machine) = machine_name {
+            let _ = timeout(
+                Duration::from_secs(5),
+                spawn_blocking(move || {
+                    lock_clone.refresh(&machine)
+                })
+            ).await;
+        }
 
         Ok(LockHeartbeatResult {
             ok: touched,
@@ -203,15 +285,28 @@ impl OperationService {
             return Err(AppError::Config("machine_name e obrigatorio".to_string()));
         }
 
-        let touched = LocalStoreService::with_data_mut(|data| {
-            Ok(LocalStoreService::touch_app_instance(
-                data,
-                input.instance_id.trim(),
-                input.machine_name.trim(),
-                input.view_label.trim(),
-                input.active_operation_id.as_deref(),
-            ))
-        })?;
+        let instance_id = input.instance_id.trim().to_string();
+        let machine_name = input.machine_name.trim().to_string();
+        let view_label = input.view_label.trim().to_string();
+        let active_operation_id = input.active_operation_id.clone();
+
+        let touched = timeout(
+            Duration::from_secs(5),
+            spawn_blocking(move || {
+                LocalStoreService::with_data_mut(|data| {
+                    Ok(LocalStoreService::touch_app_instance(
+                        data,
+                        &instance_id,
+                        &machine_name,
+                        &view_label,
+                        active_operation_id.as_deref(),
+                    ))
+                })
+            })
+        )
+        .await
+        .map_err(|_| AppError::Io("Tempo limite de rede excedido na presenca".to_string()))?
+        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))??;
 
         Ok(AppInstanceHeartbeatResult {
             ok: touched,
@@ -222,10 +317,20 @@ impl OperationService {
 
     pub async fn get_bootstrap_data(_state: &AppState) -> Result<BootstrapData, AppError> {
         let runtime = ConfigService::load()?;
-        let data = LocalStoreService::with_data_mut(|data| {
-            LocalStoreService::ensure_machine(data, &runtime.machine_name);
-            Ok(data.clone())
-        })?;
+        let runtime_clone = runtime.clone();
+
+        let data = timeout(
+            Duration::from_secs(5),
+            spawn_blocking(move || {
+                LocalStoreService::with_data_mut(|data| {
+                    LocalStoreService::ensure_machine(data, &runtime_clone.machine_name);
+                    Ok(data.clone())
+                })
+            })
+        )
+        .await
+        .map_err(|_| AppError::Io("Tempo limite de rede excedido ao carregar bootstrap".to_string()))?
+        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))??;
 
         Ok(BootstrapData {
             runtime,
@@ -235,35 +340,45 @@ impl OperationService {
         })
     }
 
-    pub async fn force_finish_current_operation(_state: &AppState) -> Result<(), AppError> {
+    pub async fn force_finish_current_operation(state: &AppState) -> Result<(), AppError> {
         let machine_name = ConfigService::machine_name();
+        let machine_name_clone = machine_name.clone();
 
-        let maybe_finish: Option<(String, String)> = LocalStoreService::with_data_mut(|data| {
-            let active_ops = LocalStoreService::active_operations(data);
-            let active = active_ops.into_iter().find(|op| {
-                op.status == "started" && op.machine_name == machine_name
-            });
+        let maybe_finish: Option<(String, String)> = spawn_blocking(move || {
+            LocalStoreService::with_data_mut(|data| {
+                let active_ops = LocalStoreService::active_operations(data);
+                let active = active_ops.into_iter().find(|op| {
+                    op.status == "started" && op.machine_name == machine_name_clone
+                });
 
-            if let Some(op) = active {
-                Ok(Some((op.operation_id, op.saida)))
-            } else {
-                Ok(None)
-            }
-        })?;
+                if let Some(op) = active {
+                    Ok(Some((op.operation_id, op.saida)))
+                } else {
+                    Ok(None)
+                }
+            })
+        })
+        .await
+        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))??;
 
         if let Some((operation_id, saida)) = maybe_finish {
             println!(">>> Finalizando operacao ativa automaticamente ao fechar: {} ({})", operation_id, saida);
 
             let incomplete_reason = "Finalizado automaticamente ao fechar o aplicativo";
+            let op_id_to_finish = operation_id.clone();
 
-            let (op_id, _, _) = LocalStoreService::with_data_mut(|data| {
-                LocalStoreService::finish_operation(
-                    data,
-                    &operation_id,
-                    false,
-                    Some(incomplete_reason),
-                )
-            })?;
+            let (op_id, _, _) = spawn_blocking(move || {
+                LocalStoreService::with_data_mut(|data| {
+                    LocalStoreService::finish_operation(
+                        data,
+                        &op_id_to_finish,
+                        false,
+                        Some(incomplete_reason),
+                    )
+                })
+            })
+            .await
+            .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))??;
 
             // Tenta mover o arquivo para parcial se possivel
             if let Ok(src_file) = resolve_finish_source_file(&saida) {
@@ -275,6 +390,9 @@ impl OperationService {
                     let _ = FileService::move_file(&src_file, &dst_file);
                 }
             }
+
+            // Libera o lock
+            let _ = state.lock.release(&machine_name);
 
             println!(">>> Operacao {} finalizada como parcial.", op_id);
         }

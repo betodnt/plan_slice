@@ -4,3 +4,4 @@ pub mod monitor_service;
 pub mod operation_service;
 pub mod file_service;
 pub mod local_store_service;
+pub mod distributed_lock;

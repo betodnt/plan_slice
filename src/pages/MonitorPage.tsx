@@ -7,20 +7,8 @@ import { getLocalDateKey } from '../lib/monitor';
 import { tauriClient } from '../lib/tauri';
 import { MonitorSidebar } from '../components/pcp/MonitorSidebar';
 import { DashboardView } from '../components/pcp/DashboardView';
+import { LoginModal } from '../components/common/LoginModal';
 import type { OperationSummary } from '../types';
-
-function StateCard({ message, tone }: { message: string; tone: 'loading' | 'error' }) {
-  const toneClass =
-    tone === 'error'
-      ? 'border-red-500/30 bg-red-950/30 text-red-300'
-      : 'border-zinc-800 bg-zinc-900 text-zinc-300';
-
-  return (
-    <section className={`rounded-2xl border p-5 shadow-xl ${toneClass}`}>
-      <div className="text-sm font-medium">{message}</div>
-    </section>
-  );
-}
 
 export default function MonitorPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -41,6 +29,7 @@ export default function MonitorPage() {
     filterType,
     setFilterType,
     totalTodayCount,
+    loading,
     refresh,
   } = useMonitorSnapshot();
 
@@ -52,54 +41,80 @@ export default function MonitorPage() {
   const [deleteError, setDeleteError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const [localStoragePath, setLocalStoragePath] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [configPaths, setConfigPaths] = useState({
+    shared_store: '',
+    machine_name: '',
+    app_env: '',
+    production_base_path: '',
+    server_path: '',
+    saidas_cnc_path: '',
+    saidas_cortadas_path: '',
+    pdf_planos_path: '',
+    lock_dir: '',
+    lock_timeout_seconds: 14400,
+    store_lock_stale_seconds: 30,
+  });
 
-  useEffect(() => {
-    if (runtime?.storage_path) {
-      setLocalStoragePath(runtime.storage_path);
-    }
-  }, [runtime?.storage_path]);
+  const monitorUsernameRef = useRef<HTMLInputElement | null>(null);
 
-  const handleBrowseStorage = async () => {
-    try {
-      const { open: openDialog } = await import('@tauri-apps/plugin-dialog');
-      const selected = await openDialog({
-        directory: true,
-        multiple: false,
-        title: 'Selecionar Pasta de Armazenamento',
+  const handleOpenConfig = () => {
+    if (runtime) {
+      setConfigPaths({
+        shared_store: runtime.storage_path || '',
+        machine_name: runtime.machine_name || '',
+        app_env: runtime.app_env || 'production',
+        production_base_path: runtime.production_base_path || '',
+        server_path: runtime.server_path || '',
+        saidas_cnc_path: runtime.saidas_cnc_path || '',
+        saidas_cortadas_path: runtime.saidas_cortadas_path || '',
+        pdf_planos_path: runtime.pdf_planos_path || '',
+        lock_dir: runtime.lock_dir || '',
+        lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
+        store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
       });
-      if (selected && typeof selected === 'string') {
-        setLocalStoragePath(selected);
+    }
+    setShowConfigModal(true);
+  };
+
+  const handleConfirmLogin = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      const result = await tauriClient.validateMonitorLogin(deleteCredentials);
+      if (result.ok) {
+        setIsAdminAuthenticated(true);
+      } else {
+        setDeleteError(result.message);
       }
-    } catch (err) {
-      console.error('Falha ao abrir seletor:', err);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Falha ao autenticar.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
   const handleSaveConfig = async () => {
-    if (!runtime || !localStoragePath) return;
     setSavingConfig(true);
     try {
       await tauriClient.saveConfig({
-        machine_name: runtime.machine_name,
-        storage_path: localStoragePath,
-        app_env: runtime.app_env,
-        production_base_path: runtime.production_base_path,
-        server_path: runtime.server_path,
-        saidas_cnc_path: runtime.saidas_cnc_path,
-        saidas_cortadas_path: runtime.saidas_cortadas_path,
-        pdf_planos_path: runtime.pdf_planos_path,
-        lock_timeout_seconds: runtime.lock_timeout_seconds,
-        store_lock_stale_seconds: runtime.store_lock_stale_seconds,
+        machine_name: configPaths.machine_name,
+        storage_path: configPaths.shared_store,
+        app_env: configPaths.app_env,
+        production_base_path: configPaths.production_base_path,
+        server_path: configPaths.server_path,
+        saidas_cnc_path: configPaths.saidas_cnc_path,
+        saidas_cortadas_path: configPaths.saidas_cortadas_path,
+        pdf_planos_path: configPaths.pdf_planos_path,
+        lock_dir: configPaths.lock_dir,
+        lock_timeout_seconds: configPaths.lock_timeout_seconds,
+        store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
       });
       await refresh();
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-      setError(''); // Clear storage error if it was fixed
     } catch (err: any) {
-      console.error('Falha ao salvar configuracao:', err);
       alert(`Falha ao salvar configuração: ${err.message}`);
     } finally {
       setSavingConfig(false);
@@ -207,7 +222,7 @@ export default function MonitorPage() {
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.03),transparent_40%)]">
         <header className="flex h-20 shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-900/30 px-8 backdrop-blur-md">
-          <div>
+          <div className="flex items-center gap-4">
             <MonitorHeader
               activeCount={activeCount}
               instanceCount={instanceCount}
@@ -217,6 +232,12 @@ export default function MonitorPage() {
               onRefresh={refresh}
               minimal
             />
+            {loading && (
+              <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-500">
+                <div className="h-2 w-2 animate-spin rounded-full border border-emerald-500/20 border-t-emerald-500" />
+                ATUALIZANDO...
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div className="flex h-10 items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950/50 px-4 text-xs font-medium text-zinc-400">
@@ -229,8 +250,22 @@ export default function MonitorPage() {
         <div className="custom-scrollbar flex-1 overflow-y-auto p-8">
           <div className="mx-auto max-w-7xl">
             {error && (
-              <div className="mb-6">
-                <StateCard message={`Erro de conexao: ${error}`} tone="error" />
+              <div className="mb-6 space-y-4">
+                <div className="flex items-center justify-between rounded-2xl border border-red-500/30 bg-red-950/30 p-5 text-red-300 shadow-xl">
+                  <div className="text-sm font-medium">Erro de conexao: {error}</div>
+                  <button
+                    onClick={() => refresh()}
+                    className="rounded-lg bg-red-500/20 px-4 py-2 text-xs font-bold hover:bg-red-500/30"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {loading && !monitor && (
+              <div className="flex h-64 items-center justify-center">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500/20 border-t-emerald-500" />
               </div>
             )}
 
@@ -395,44 +430,18 @@ export default function MonitorPage() {
                 </div>
 
                 <div className="max-w-xl space-y-6 rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-sm">
-                  <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                      Caminho de Armazenamento (.plan_slice)
-                    </span>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-emerald-500/50"
-                        value={localStoragePath}
-                        onChange={(e) => setLocalStoragePath(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleBrowseStorage}
-                        className="flex h-[42px] w-12 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 transition-colors hover:bg-zinc-700"
-                        disabled={savingConfig}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-                      </button>
-                    </div>
-                    <p className="mt-1.5 text-xs text-zinc-500">Defina o caminho de rede ou pasta local (.plan_slice) que conecta a fabrica.</p>
-                  </label>
-
+                  <div className="space-y-4">
+                    <p className="text-sm text-zinc-300">
+                      Para alterar as configurações globais de rede e pastas, é necessário acesso administrativo.
+                    </p>
                     <button
-                      onClick={handleSaveConfig}
-                      disabled={savingConfig || !localStoragePath || localStoragePath === runtime?.storage_path}
-                      className="flex w-full items-center justify-center rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-zinc-950 transition-all hover:bg-emerald-400 disabled:opacity-50"
+                      onClick={handleOpenConfig}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-zinc-950 transition-all hover:bg-emerald-400 shadow-lg shadow-emerald-500/10"
                     >
-                      {savingConfig ? 'SALVANDO...' : 'SALVAR CONFIGURAÇÃO'}
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                      ACESSAR CONFIGURAÇÕES
                     </button>
-
-                    {saveSuccess && (
-                      <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 py-2 text-xs font-bold text-emerald-400 animate-in fade-in zoom-in duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        CONFIGURAÇÃO SALVA COM SUCESSO
-                      </div>
-                    )}
-
+                  </div>
                 </div>
               </div>
             )}
@@ -510,6 +519,27 @@ export default function MonitorPage() {
           </div>
         </div>
       )}
+
+      <LoginModal
+        open={showConfigModal}
+        onClose={() => {
+          setShowConfigModal(false);
+          setIsAdminAuthenticated(false);
+        }}
+        isAdminAuthenticated={isAdminAuthenticated}
+        monitorLoginLoading={deleteLoading}
+        monitorLoginError={deleteError}
+        monitorLoginForm={deleteCredentials}
+        monitorUsernameRef={monitorUsernameRef}
+        onMonitorLoginFormChange={(patch) => setDeleteCredentials(prev => ({ ...prev, ...patch }))}
+        onConfirmMonitorLogin={handleConfirmLogin}
+        configPaths={configPaths}
+        onConfigPathsChange={(patch) => setConfigPaths(prev => ({ ...prev, ...patch }))}
+        onSaveConfig={handleSaveConfig}
+        loading={savingConfig}
+        title="Configurações PCP"
+        subtitle="Gerencie os parâmetros globais de monitoramento e rede."
+      />
     </div>
   );
 }
