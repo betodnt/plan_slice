@@ -8,7 +8,7 @@ import { tauriClient } from '../lib/tauri';
 import { MonitorSidebar } from '../components/pcp/MonitorSidebar';
 import { DashboardView } from '../components/pcp/DashboardView';
 import { LoginModal } from '../components/common/LoginModal';
-import type { OperationSummary } from '../types';
+import type { ConfigPaths, OperationSummary } from '../types';
 
 export default function MonitorPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -44,7 +44,7 @@ export default function MonitorPage() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [configPaths, setConfigPaths] = useState({
+  const [configPaths, setConfigPaths] = useState<ConfigPaths>({
     shared_store: '',
     machine_name: '',
     app_env: '',
@@ -55,6 +55,9 @@ export default function MonitorPage() {
     pdf_planos_path: '',
     lock_dir: '',
     protheus_url: '',
+    protheus_client_id: '',
+    protheus_client_secret: '',
+    protheus_tenant_id: '',
     lock_timeout_seconds: 14400,
     store_lock_stale_seconds: 30,
   });
@@ -74,6 +77,9 @@ export default function MonitorPage() {
         pdf_planos_path: runtime.pdf_planos_path || '',
         lock_dir: runtime.lock_dir || '',
         protheus_url: runtime.protheus_url || '',
+        protheus_client_id: runtime.protheus_client_id || '',
+        protheus_client_secret: runtime.protheus_client_secret || '',
+        protheus_tenant_id: runtime.protheus_tenant_id || '',
         lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
         store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
       });
@@ -113,6 +119,9 @@ export default function MonitorPage() {
         pdf_planos_path: configPaths.pdf_planos_path,
         lock_dir: configPaths.lock_dir,
         protheus_url: configPaths.protheus_url,
+        protheus_client_id: configPaths.protheus_client_id,
+        protheus_client_secret: configPaths.protheus_client_secret,
+        protheus_tenant_id: configPaths.protheus_tenant_id,
         lock_timeout_seconds: configPaths.lock_timeout_seconds,
         store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
       });

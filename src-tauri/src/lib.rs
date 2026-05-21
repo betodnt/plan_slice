@@ -73,6 +73,7 @@ where
             commands::file_commands::search_cnc_files,
             commands::file_commands::open_pdf,
             commands::file_commands::get_pdf_bytes,
+            commands::protheus_commands::get_protheus_op,
         ])
         .run(tauri::generate_context!())
         .expect("erro ao iniciar aplicacao tauri");

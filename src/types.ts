@@ -9,6 +9,9 @@ export type RuntimeConfig = {
   pdf_planos_path: string;
   lock_dir: string;
   protheus_url: string;
+  protheus_client_id: string;
+  protheus_client_secret: string;
+  protheus_tenant_id: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
 };
@@ -183,6 +186,9 @@ export type ConfigPaths = {
   pdf_planos_path: string;
   lock_dir: string;
   protheus_url: string;
+  protheus_client_id: string;
+  protheus_client_secret: string;
+  protheus_tenant_id: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
 };

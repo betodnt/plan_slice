@@ -33,19 +33,15 @@ const initialForm: StartOperationInput = {
 };
 
 function detectMonitorView(): boolean {
-  // Em ambiente de desenvolvimento web/teste, o tauri-apps/api pode não estar disponível
-  // ou falhar ao invocar comandos nativos.
   const params = new URLSearchParams(window.location.search);
   if (params.get('view') === 'monitor' || window.location.hash.includes('monitor')) {
     return true;
   }
 
   try {
-    // Tenta obter a janela atual. Se falhar (ex: ambiente web puro), tratamos o erro.
     const win = getCurrentWebviewWindow();
     return win.label === 'monitor';
   } catch (err) {
-    // Silencioso em produção, útil em desenvolvimento
     return false;
   }
 }
@@ -88,6 +84,9 @@ function MainApp() {
     pdf_planos_path: '',
     lock_dir: '',
     protheus_url: '',
+    protheus_client_id: '',
+    protheus_client_secret: '',
+    protheus_tenant_id: '',
     lock_timeout_seconds: 14400,
     store_lock_stale_seconds: 30,
   });
@@ -130,10 +129,13 @@ function MainApp() {
       }));
     } catch (error) {
       showFeedback(getErrorMessage(error));
+    } finally {
+      setLoading(false);
     }
   }, [showFeedback]);
 
   const loadInitialState = useCallback(async () => {
+    setLoading(true);
     try {
       const storageBootstrap = await tauriClient.bootstrapStorage();
       if (!storageBootstrap.ok) console.warn('Bootstrap falhou', storageBootstrap.message);
@@ -250,12 +252,12 @@ function MainApp() {
     };
 
     void sendPresence();
-    const heartbeatInterval = window.setInterval(() => {
+    const heartbeatIntervalId = window.setInterval(() => {
       void sendPresence();
     }, 10000);
 
     return () => {
-      window.clearInterval(heartbeatInterval);
+      window.clearInterval(heartbeatIntervalId);
     };
   }, [runtime?.machine_name, activeOperationId]);
 
@@ -305,6 +307,9 @@ function MainApp() {
         pdf_planos_path: runtime.pdf_planos_path || '',
         lock_dir: runtime.lock_dir || '',
         protheus_url: runtime.protheus_url || '',
+        protheus_client_id: runtime.protheus_client_id || '',
+        protheus_client_secret: runtime.protheus_client_secret || '',
+        protheus_tenant_id: runtime.protheus_tenant_id || '',
         lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
         store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
       });
@@ -523,6 +528,9 @@ function MainApp() {
         pdf_planos_path: configPaths.pdf_planos_path,
         lock_dir: configPaths.lock_dir,
         protheus_url: configPaths.protheus_url,
+        protheus_client_id: configPaths.protheus_client_id,
+        protheus_client_secret: configPaths.protheus_client_secret,
+        protheus_tenant_id: configPaths.protheus_tenant_id,
         lock_timeout_seconds: configPaths.lock_timeout_seconds,
         store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
       });

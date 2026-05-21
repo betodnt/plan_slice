@@ -20,6 +20,9 @@ struct FileConfig {
     pdf_planos_path: Option<String>,
     lock_dir: Option<String>,
     protheus_url: Option<String>,
+    protheus_client_id: Option<String>,
+    protheus_client_secret: Option<String>,
+    protheus_tenant_id: Option<String>,
     lock_timeout_seconds: Option<i64>,
     store_lock_stale_seconds: Option<i64>,
 }
@@ -182,7 +185,22 @@ impl ConfigService {
         let protheus_url = file_config
             .as_ref()
             .and_then(|config| config.protheus_url.clone())
-            .unwrap_or_else(|| "http://localhost:8080/rest".to_string());
+            .unwrap_or_else(|| "http://138.219.91.202:4050/rest".to_string());
+
+        let protheus_client_id = file_config
+            .as_ref()
+            .and_then(|config| config.protheus_client_id.clone())
+            .unwrap_or_default();
+
+        let protheus_client_secret = file_config
+            .as_ref()
+            .and_then(|config| config.protheus_client_secret.clone())
+            .unwrap_or_default();
+
+        let protheus_tenant_id = file_config
+            .as_ref()
+            .and_then(|config| config.protheus_tenant_id.clone())
+            .unwrap_or_default();
 
         let lock_timeout_seconds = file_config
             .as_ref()
@@ -205,6 +223,9 @@ impl ConfigService {
             pdf_planos_path,
             lock_dir,
             protheus_url,
+            protheus_client_id,
+            protheus_client_secret,
+            protheus_tenant_id,
             lock_timeout_seconds,
             store_lock_stale_seconds,
         })
@@ -286,6 +307,10 @@ impl ConfigService {
             saidas_cortadas_path: Some(input.saidas_cortadas_path),
             pdf_planos_path: Some(input.pdf_planos_path),
             lock_dir: Some(input.lock_dir),
+            protheus_url: Some(input.protheus_url),
+            protheus_client_id: Some(input.protheus_client_id),
+            protheus_client_secret: Some(input.protheus_client_secret),
+            protheus_tenant_id: Some(input.protheus_tenant_id),
             lock_timeout_seconds: Some(input.lock_timeout_seconds),
             store_lock_stale_seconds: Some(input.store_lock_stale_seconds),
         })

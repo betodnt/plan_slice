@@ -3,5 +3,6 @@ pub mod health_commands;
 pub mod config_commands;
 pub mod monitor_commands;
 pub mod operation_commands;
+pub mod protheus_commands;
 pub mod file_commands;
 pub mod auth_commands;

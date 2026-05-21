@@ -13,6 +13,9 @@ pub struct RuntimeConfig {
     pub pdf_planos_path: String,
     pub lock_dir: String,
     pub protheus_url: String,
+    pub protheus_client_id: String,
+    pub protheus_client_secret: String,
+    pub protheus_tenant_id: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
 }
@@ -28,6 +31,10 @@ pub struct SaveConfigInput {
     pub saidas_cortadas_path: String,
     pub pdf_planos_path: String,
     pub lock_dir: String,
+    pub protheus_url: String,
+    pub protheus_client_id: String,
+    pub protheus_client_secret: String,
+    pub protheus_tenant_id: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
 }
