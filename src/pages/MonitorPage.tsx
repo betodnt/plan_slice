@@ -54,6 +54,7 @@ export default function MonitorPage() {
     saidas_cortadas_path: '',
     pdf_planos_path: '',
     lock_dir: '',
+    protheus_url: '',
     lock_timeout_seconds: 14400,
     store_lock_stale_seconds: 30,
   });
@@ -72,6 +73,7 @@ export default function MonitorPage() {
         saidas_cortadas_path: runtime.saidas_cortadas_path || '',
         pdf_planos_path: runtime.pdf_planos_path || '',
         lock_dir: runtime.lock_dir || '',
+        protheus_url: runtime.protheus_url || '',
         lock_timeout_seconds: runtime.lock_timeout_seconds || 14400,
         store_lock_stale_seconds: runtime.store_lock_stale_seconds || 30,
       });
@@ -110,6 +112,7 @@ export default function MonitorPage() {
         saidas_cortadas_path: configPaths.saidas_cortadas_path,
         pdf_planos_path: configPaths.pdf_planos_path,
         lock_dir: configPaths.lock_dir,
+        protheus_url: configPaths.protheus_url,
         lock_timeout_seconds: configPaths.lock_timeout_seconds,
         store_lock_stale_seconds: configPaths.store_lock_stale_seconds,
       });

@@ -19,6 +19,7 @@ struct FileConfig {
     saidas_cortadas_path: Option<String>,
     pdf_planos_path: Option<String>,
     lock_dir: Option<String>,
+    protheus_url: Option<String>,
     lock_timeout_seconds: Option<i64>,
     store_lock_stale_seconds: Option<i64>,
 }
@@ -178,6 +179,11 @@ impl ConfigService {
             .and_then(|config| config.lock_dir.clone())
             .unwrap_or_else(|| Self::lock_dir_path().unwrap_or_default().to_string_lossy().to_string());
 
+        let protheus_url = file_config
+            .as_ref()
+            .and_then(|config| config.protheus_url.clone())
+            .unwrap_or_else(|| "http://localhost:8080/rest".to_string());
+
         let lock_timeout_seconds = file_config
             .as_ref()
             .and_then(|config| config.lock_timeout_seconds)
@@ -198,6 +204,7 @@ impl ConfigService {
             saidas_cortadas_path,
             pdf_planos_path,
             lock_dir,
+            protheus_url,
             lock_timeout_seconds,
             store_lock_stale_seconds,
         })
