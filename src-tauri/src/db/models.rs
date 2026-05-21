@@ -12,6 +12,7 @@ pub struct RuntimeConfig {
     pub saidas_cortadas_path: String,
     pub pdf_planos_path: String,
     pub lock_dir: String,
+    pub protheus_url: String,
     pub lock_timeout_seconds: i64,
     pub store_lock_stale_seconds: i64,
 }

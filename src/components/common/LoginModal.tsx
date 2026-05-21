@@ -266,6 +266,7 @@ export function LoginModal({
                         { label: 'Saidas Cortadas', key: 'saidas_cortadas_path' },
                         { label: 'PDF Planos', key: 'pdf_planos_path' },
                         { label: 'Pasta de Locks', key: 'lock_dir' },
+                        { label: 'Protheus REST URL', key: 'protheus_url' },
                       ].map((item) => (
                         <label key={item.key} className="block">
                           <span className={labelSpanClass}>{item.label}</span>

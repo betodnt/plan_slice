@@ -108,16 +108,24 @@ impl OperationService {
                 Ok(())
             })
         )
-        .await
-        .map_err(|_| AppError::Io("Tempo limite de rede excedido".to_string()))?
-        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))?;
+        .await;
 
-        if let Err(error) = file_op_result {
-            let _ = LocalStoreService::with_data_mut(|data| {
-                LocalStoreService::rollback_start_operation(data, &operation_id)
-            });
-            let _ = state.lock.release(input.maquina.trim());
-            return Err(error);
+        match file_op_result {
+            Ok(Ok(Ok(()))) => {
+                // Sucesso
+            }
+            error => {
+                let _ = LocalStoreService::with_data_mut(|data| {
+                    LocalStoreService::rollback_start_operation(data, &operation_id)
+                });
+                let _ = state.lock.release(input.maquina.trim());
+
+                return Err(match error {
+                    Ok(Ok(Err(e))) => e,
+                    Ok(Err(e)) => AppError::Internal(format!("Erro de thread: {}", e)),
+                    Err(_) => AppError::Io("Tempo limite de rede excedido".to_string()),
+                });
+            }
         }
 
         Ok(StartOperationResult {
@@ -188,20 +196,30 @@ impl OperationService {
                 Ok(())
             })
         )
-        .await
-        .map_err(|_| AppError::Io("Tempo limite de rede excedido".to_string()))?
-        .map_err(|e| AppError::Internal(format!("Erro de thread: {}", e)))?;
+        .await;
 
-        if let Err(error) = file_op_result {
-            let _ = LocalStoreService::with_data_mut(|data| {
-                LocalStoreService::rollback_finish_operation(data, &operation_id, &owner_id)
-            });
-            return Err(error);
-        }
+        match file_op_result {
+            Ok(Ok(Ok(()))) => {
+                // Libera o lock distribuído somente após concluir as operações de arquivo
+                if !machine_name.is_empty() {
+                    let _ = state.lock.release(&machine_name);
+                }
+            }
+            error => {
+                let _ = LocalStoreService::with_data_mut(|data| {
+                    LocalStoreService::rollback_finish_operation(data, &operation_id, &owner_id)
+                });
+                // Libera o lock mesmo em caso de erro no final
+                if !machine_name.is_empty() {
+                    let _ = state.lock.release(&machine_name);
+                }
 
-        // Libera o lock distribuído somente após concluir as operações de arquivo
-        if !machine_name.is_empty() {
-            let _ = state.lock.release(&machine_name);
+                return Err(match error {
+                    Ok(Ok(Err(e))) => e,
+                    Ok(Err(e)) => AppError::Internal(format!("Erro de thread: {}", e)),
+                    Err(_) => AppError::Io("Tempo limite de rede excedido".to_string()),
+                });
+            }
         }
 
         Ok(FinishOperationResult {

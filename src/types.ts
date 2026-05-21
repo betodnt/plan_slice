@@ -8,6 +8,7 @@ export type RuntimeConfig = {
   saidas_cortadas_path: string;
   pdf_planos_path: string;
   lock_dir: string;
+  protheus_url: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
 };
@@ -181,6 +182,7 @@ export type ConfigPaths = {
   saidas_cortadas_path: string;
   pdf_planos_path: string;
   lock_dir: string;
+  protheus_url: string;
   lock_timeout_seconds: number;
   store_lock_stale_seconds: number;
 };
