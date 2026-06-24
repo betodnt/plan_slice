@@ -46,3 +46,9 @@ Exemplo pronto: `src-tauri/.env.example`
 
 - `APP_LOCAL_STORE_PATH` fica reservado para desenvolvimento.
 - Em producao, o armazenamento compartilhado e obrigatorio para manter o monitor global consistente.
+
+## Futuro e Evolução
+
+Estamos planejando a evolução do Plano Slice para um modelo SaaS com integração nativa ao ERP TOTVS Protheus.
+Para mais detalhes sobre a arquitetura proposta e o roadmap de integração, consulte:
+- [Plano de Evolução: SaaS & Integração TOTVS Protheus](SAAS_INTEGRATION_PLAN.md)
